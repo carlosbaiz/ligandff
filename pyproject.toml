@@ -11,9 +11,11 @@ dependencies = ["rdkit>=2024.3", "networkx>=3.0"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+export = ["openmm>=8.0", "parmed>=4.2"]
 
 [project.scripts]
 open-cgenff-bench = "open_cgenff.benchmarks.runner:main"
+open-cgenff = "open_cgenff.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

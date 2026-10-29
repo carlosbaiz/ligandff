@@ -4,7 +4,8 @@ An open-source, **CGenFF-compatible** atom typer and parameter/charge assigner f
 reimplementation of the CGenFF program (v5.0) from the published algorithms and the public CGenFF 5.0 data.
 Not affiliated with, or endorsed by, the CGenFF developers or SilcsBio. Status: specification, verified prototypes, package skeleton with benchmark runner (M0),
 production charge engine (M1), perception and benchmark B2 (M2), rule-language typer with rule file v1 (M3),
-parameter database and analogy engine with a provisional penalty matrix (M4).
+parameter database and analogy engine with a provisional penalty matrix (M4), lone pairs, `.str`/JSON/PSF output,
+CLI and OpenMM/GROMACS export (M6).
 
 - `docs/SPEC.md` – technical specification, benchmarks, milestones
 - `docs/FINDINGS.md` – what has been verified so far, with numbers
@@ -17,3 +18,12 @@ bash scripts/fetch_data.sh      # fetches pinned CHARMM36/CGenFF 5.0 data into d
 python -m pytest -q
 python -m open_cgenff.benchmarks --check-floors   # benchmark report in build/report/
 ```
+
+Usage (input: mol2/SDF with all hydrogens and bond orders, or SMILES):
+```
+open-cgenff ligand.mol2 -o ligand.str --json ligand.json      # CHARMM stream file + report
+open-cgenff "Clc1ccccc1C(=O)O" --name CBA -o cba.str --psf cba.psf
+pip install -e ".[export]"; open-cgenff ligand.mol2 -o ligand.str --gromacs ligand   # .top/.gro via ParmEd
+```
+Penalties: < 10 fair analogy; 10–50 some validation; > 50 extensive validation. Outputs are CGenFF-compatible, not
+from the official CGenFF program.

@@ -36,7 +36,8 @@ class InputMolecule:
 
     @classmethod
     def from_rdkit(cls, mol, name=""):
-        """Aromatic RDKit bonds become AROMATIC (resolved by perception); formal charges are taken from RDKit."""
+        """Aromatic RDKit bonds become AROMATIC (resolved by perception); formal charges are taken from RDKit;
+        coordinates from the first conformer, if any. Atom names: element + 1-based index."""
         from rdkit import Chem
         orders = {Chem.BondType.SINGLE: 1, Chem.BondType.DOUBLE: 2, Chem.BondType.TRIPLE: 3}
         bonds = []
@@ -46,8 +47,12 @@ class InputMolecule:
                 raise ValueError(f"unsupported bond type {b.GetBondType()}")
             bonds.append((b.GetBeginAtomIdx(), b.GetEndAtomIdx(), order))
         atoms = list(mol.GetAtoms())
-        return cls(name, [f"{a.GetSymbol()}{a.GetIdx() + 1}" for a in atoms], [a.GetSymbol() for a in atoms], bonds,
-                   [a.GetFormalCharge() for a in atoms])
+        names = [f"{a.GetSymbol()}{a.GetIdx() + 1}" for a in atoms]
+        coords = None
+        if mol.GetNumConformers():
+            pos = mol.GetConformer().GetPositions()
+            coords = [tuple(float(x) for x in p) for p in pos]
+        return cls(name, names, [a.GetSymbol() for a in atoms], bonds, [a.GetFormalCharge() for a in atoms], coords)
 
 
 @dataclass
@@ -64,6 +69,7 @@ class TypedMolecule:
     formal_charges: list = None
     impropers: list = field(default_factory=list)
     warnings: list = field(default_factory=list)
+    errors: list = field(default_factory=list)            # typing-rule `err` actions, atoms no rule matched
 
     def __post_init__(self):
         if self.formal_charges is None:

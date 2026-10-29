@@ -10,5 +10,4 @@ Definitions, status and hygiene rules: `docs/SPEC.md` §7. Builders and runner: 
   B2-test is sealed.
 - `plugins/` – typer plug-ins for the runner (`--typer FILE`; default is the production typer `open_cgenff.typing`),
   e.g. the pilot typer on production perception.
-- B5 (official CGenFF 5.0 outputs) will be added here (M7). Planned B5 layout:
-  `b5_official_v5/<name>.mol2` + `<name>.str`, plus `split.json` (dev 30 % / test 70 %, fixed seed).
+- B5 (official CGenFF 5.0 outputs) was dropped (SPEC D4): no official program outputs are used.

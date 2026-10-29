@@ -25,7 +25,7 @@ def type_molecule(mol, rules=None):
     res = type_perception(rules or default_rules(), p)
     bonds = [(i, j) for i, j, _ in mol.bonds]
     return TypedMolecule(list(mol.atom_names), res.types, bonds, res.charges, res.impropers,
-                         p.warnings + res.warnings + res.errors)
+                         p.warnings + res.warnings, res.errors)
 
 
 def type_rdkit(rdmol):

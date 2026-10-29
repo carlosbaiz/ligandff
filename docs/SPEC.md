@@ -23,13 +23,18 @@ reproduces the output of the CGenFF program **version 5.0** (SilcsBio / MacKerel
 **Non-goals.** New parameter optimization (QM fitting), changing CGenFF parameters, distributing CGenFF force-field
 files, reproducing program versions other than 5.0 (older versions only as secondary benchmarks).
 
-**Definition of done (v1.0)**, measured on the sealed external set B5 (section 7):
-- atom types: ≥ 95 % of molecules fully identical (all atoms), ≥ 99.5 % of atoms;
-- charges: identical to 0.001 e for every molecule whose types match and whose parameters need no analogy;
-  max |Δq| ≤ 0.02 e for ≥ 90 % of the remaining type-matched molecules;
-- bonded parameters by analogy: same source parameter for ≥ 90 % of analog parameters; penalty within ±10 % for ≥ 90 %;
-- `.str` output loads in CHARMM/OpenMM without manual edits.
-These targets are provisional until B5 exists; revisit after M7.
+**Definition of done (v1.0)**, measured on the benchmarks we have (section 7; D4: no official program outputs will be
+used, so B5 is dropped):
+- atom types: B1-test ≥ 96 % and B2-test ≥ 95 % of molecules fully identical, ≥ 99.5 % of atoms; B3 100 %;
+- charges: B0 exact (charges and penalties to 0.001 e); QT unchanged; QF formal charges as in 7.4;
+- bonded parameters by analogy: leave-one-out on B4-test (official analog choices recorded in the parameter file):
+  same source parameter ≥ 85 %, TPS within ±0.5 ≥ 80 % (M5);
+- impropers: QI as in 7.4;
+- output: the `.str` (plus our PSF) builds an OpenMM system for every B1/B2/B3 molecule.
+Limitation that follows from D4: every reference is a CGenFF training molecule or an analogy chosen by the program
+when the parameter file was built. How closely the tool reproduces the official program on new drug-like molecules
+(full typing rules, penalty matrix, tie-breaks) is not measured; outputs say so (SPEC 2.2) and penalties keep their
+meaning as a warning, not as a guarantee of agreement with the official program.
 
 ## 2. Ground rules (apply to every contributor, human or agent)
 
@@ -37,8 +42,8 @@ These targets are provisional until B5 exists; revisit after M7.
 - Build only from the published papers/SI and the public data in section 6. Do **not** download, decompile,
   disassemble, or inspect the CGenFF program, its rule files, or any SilcsBio binaries/data.
   (Note: `data/cgenff5/developer_program/*.exe` are SilcsBio training executables: do not run or inspect them.)
-- Official CGenFF outputs may be used **only as test oracles**, and only if the license under which they were obtained
-  allows it (open decision D4, section 11).
+- Official CGenFF outputs are not used (D4, decided 2026-10-29), not even as test oracles; the exact program 5.0
+  output printed in the P-v5 SI (B0) is the only exception, as a published fact.
 
 ### 2.2 Naming
 - Do not call the tool "CGenFF" (P-Orr asks that the name be reserved for the official program + current parameters).
@@ -151,7 +156,7 @@ SI archive: `bash scripts/import_pi_si.sh <ci300363c_si_001.zip>` → `data/pi_s
   nucleotides such as AMP are mistyped; FINDINGS §6).
 - Ties are broken by traversal order (first structure found wins) ⇒ output can depend on input atom order. The pilot
   used an RDKit enumeration + heuristic tie-break and got 1 avoidable error class (quinolinium). Implement P-I's
-  algorithm literally, starting from the lowest-index atom, and calibrate start/choice order against B5.
+  algorithm literally, starting from the lowest-index atom, and keep that order (no official outputs to calibrate against, D4).
 - The resonance formal charges are separate from the formal charges assigned by typing rules (5.7).
 Accept: P-I worked examples reproduce the published scores; pilot regression on B1 not worse.
 Status (M2): `perception/resonance.py`, a lexicographic search over the trail's choice sequence with valence-bound
@@ -267,14 +272,13 @@ bond, angle and dihedral is written in canonical orientation; the file is in col
 - Penalty interpretation printed in outputs: < 10 fair; 10–50 basic validation; > 50 extensive validation.
 Status: done (M4) with the provisional matrix of 5.10: `params/analogy.py` (`AnalogyEngine.find`/`tps`,
 `assign_parameters`, `charge_analogs`), `params/penalties.py` (rule parser, `BondGroups`, matrices). Decisions where
-P-II is silent (confirm on B5): impropers are matched centre first with every order of the three outer atoms (exact
+P-II is silent (unverifiable without official outputs, D4): impropers are matched centre first with every order of the three outer atoms (exact
 lookup and analogy; the order as generated is tried first) instead of reversal; the search is exact but indexed by
 inner-position types and skips groups whose inner cost alone exceeds the best TPS (same result as a full scan, tested).
 Accept (M4): M064's analog (CG311-CG2O5-CG311-CG331 from CG321-CG2O5-CG311-CG331, 0.6), its param penalty, and with
 analog increments its charges and charge penalties are reproduced exactly; unit tests for TPS composition
 (`tests/test_params.py`). Open: dihedrals through a linear centre (X–CG1T1≡CG1T2–Y, X–CG1N1≡NG1T1 neighbours) do not
-exist in CGenFF (22 in 7 B1-train molecules); the engine assigns analogs to them; check on B5 whether the program
-skips them.
+exist in CGenFF (22 in 7 B1-train molecules); the engine assigns analogs to them (whether the program skips them is unknown).
 
 ### 5.10 Penalty matrix (content: must be reconstructed)
 Generated by a hierarchical "parameter assignment" section of the rule file: categories with entries `typ`/`sub`, each
@@ -304,7 +308,7 @@ annotations (725): same source 36 %, |ΔTPS| ≤ 0.5 46 % (FINDINGS §8); M5 sta
   (q_first −= d, q_second += d). If the instance matches in reverse order, reverse the atoms.
 - Increments for missing parameters come from an analog parameter found with the nonbonded matrix at **all** positions
   (P-II) — may differ from the bonded-parameter analog. Dihedral increments whose analogy penalty exceeds 50 are ignored
-  (increment 0, penalty 50). Both rules are from 2012: confirm on B5.
+  (increment 0, penalty 50). Both rules are from 2012: unverifiable without official outputs, D4.
 - `N/A` increments (P-v5 file) contribute nothing.
 - Per-atom penalty (P-II eq 4): `σ_i = sqrt( Σ_n cbrt(|β_n| + δ) σ_n² )`, δ = 0.05⁶, where β_n is the **net** charge one
   parameter instance moves onto atom i and σ_n that parameter's penalty. RESI header: charge penalty = max σ_i;
@@ -322,8 +326,11 @@ numeric increments (not `N/A`).
 Aromatic Cl/Br/I get a massless, LJ-free virtual site, colinear with C–X, at 1.64 / 1.89 / 2.20 Å from X, charge +0.05 e
 (fixed). RTF syntax: `LONEPAIR COLINEAR LP X C DIST d SCAL 0.00`. How the program offsets the halogen charge is not
 published: the best simple rule (halogen = increment charge − 0.05) reproduces training charges within 0.04 e
-(mean 0.017 e). Some RTF entries have DIST 0.0: investigate. NBFIX halogen–amide-O terms come with the parameter file.
-Calibrate on B5.
+(mean 0.017 e). NBFIX halogen–amide-O terms come with the parameter file.
+Status: done (M6): `lonepairs.py` (CLGR1/BRGR1/IGR1 only; LP1, LP2, … in atom order; halogen = increment charge −
+0.05, LP charge penalty 0). The v5.0 RTF has no DIST 0.0 entries (66 lone pairs, all 1.64/1.89/2.20 Å); two aliphatic
+halogens carry lone pairs there (SM200 BRGA1, SM211 CLGA1) against P-X: not reproduced. Halogen offset rule checked on
+the B2-train residues (FINDINGS §9).
 
 ### 5.13 Other terms
 Urey–Bradley and NBFIX come with the parameter file. Improper dihedrals: generated where typing rules carry `impr`;
@@ -339,6 +346,14 @@ exactly the reference centres.
 CHARMM `.str` (section 3). GROMACS and OpenMM: reuse established converters (e.g. ParmEd; the Lemkul lab
 `cgenff_charmm2gmx` script) rather than writing new ones. Accept: OpenMM can build a system from the output for all
 B3 molecules; energies match CHARMM where CHARMM is available.
+Status: done (M6): `pipeline.py` (`read_molecule`, `parameterize`, `parameterize_typed`), `io/stream.py` (`.str` in
+the section 3 layout + JSON report), `io/psf.py` (PSF with NUMLP lone pairs), `export.py` (OpenMM through
+`CharmmPsfFile` + `CharmmParameterSet(top_all36_cgenff.rtf, par_all36_cgenff.prm, our .str)`; GROMACS `.top/.gro`
+through ParmEd from that system), `cli.py` (`open-cgenff INPUT -o x.str --json --psf --gromacs`). All 34 B3 molecules
+and all 2,040 B1/B2 molecules run through the pipeline without typing errors; every B3 molecule and every B1/B2
+molecule with lone pairs (31) builds an OpenMM system with the virtual site on the C–X axis (tests). The analog lines
+of M064's `.str` reproduce the SI's provenance (`from CG321 CG2O5 CG311 CG331, penalty= 0.6`). No CHARMM available to
+compare energies. Coordinates: input coordinates (mol2/SDF) or an RDKit embedding of the connectivity.
 
 ## 6. Data sources (pinned in `scripts/fetch_data.sh`)
 
@@ -363,12 +378,12 @@ B3 molecules; energies match CHARMM where CHARMM is available.
 | B2 | the 937 RTF residues without SMILES (original CGenFF model compounds). Bond orders from connectivity + net charge (RDKit DetermineBondOrders; IC tables not needed) → 910 molecules / 17,669 atoms (23 disconnected, 4 failed). Split 80/20 seed 42: `benchmarks/b2_rtf_legacy.split.json` (728/182). Adds 32 types absent from B1 (aromatic Cl/Br/I, aliphatic halogens, phosphates PG0/1/2, OG303/OG304, SG301, CG323, CG2O7/OG2D5, NG331, HGPAM3, CG3AM*/HGAAM*, B, Se, Al …). Since M3, charge separation produced by DetermineBondOrders along an alternating path (e.g. a thioester as `[S+]=C-[O-]`) is removed (14 residues; `b2.py:_neutralize`) | done (M2) | development (split 80/20 like B1) |
 | B3 | `benchmarks/charmm_gui_cpa/`: 34 CGenFF-typed species from CHARMM-GUI (CGenFF ≤ 4.6 era; 26 not in the reference set) | done | typing regression (must stay 100 %); charges only as version-drift reference |
 | B4 | annotated analogies in the parameter files (`from X, penalty= N`) | extract in M5 | fit/validate penalty matrix (leave-one-out) |
-| B5 | official CGenFF **5.0** outputs (`.mol2` input + `.str` output) for 200–1,000 diverse drug-like molecules, to be supplied by Carlos | pending (D4) | B5-dev (30 %) for calibration of tie-breaks/LP/analogy; **B5-test (70 %) sealed** = definition of done |
+| B5 | official CGenFF **5.0** outputs for diverse drug-like molecules | dropped (D4, 2026-10-29: not available, and not to be used for training) | B5-dev (30 %) for calibration of tie-breaks/LP/analogy; **B5-test (70 %) sealed** = definition of done |
 
 ### 7.2 Hygiene
-- Rule writing may look at failures in B1-train, B2-train, B5-dev only.
+- Rule writing may look at failures in B1-train, B2-train (and B4-train from M5) only.
 - B1-test was inspected once (pilot, after v4) for characterization: treat it as semi-sealed (aggregate metrics only from
-  now on). B2-test and B5-test: aggregate metrics only, ever.
+  now on). B2-test (and B4-test from M5): aggregate metrics only, ever.
 - Report train and test side by side; a widening gap is overfitting.
 
 ### 7.3 Metrics (benchmark runner must report all, JSON + markdown)
@@ -399,8 +414,8 @@ M4). Enforced as exact counts in
 | M3 | Rule engine (5.5) + rule file v1 (5.6–5.7): Appendix A + port of pilot rules, then extend to B2 types | B1-train ≥ 99 %, B1-test ≥ 96 %, B2-train ≥ 98 %, B2-test ≥ 95 %, B3 100 %; rules changelog complete | done (2026-10-29): 99.0 / 97.3 / 98.9 / 97.8 / 100 %; QF formal charges 1,940/1,942 |
 | M4 | Parameter DB + analogy engine (5.8–5.9) with a provisional matrix | M064 fixture analog reproduced; unit tests for TPS composition (inner ×10, bond groups, reversal) | done (2026-10-29): M064 analog, param and charge penalties exact; impropers from rules (QI) |
 | M5 | Penalty-matrix reconstruction (5.10) | leave-one-out on B4: same source ≥ 85 %, TPS within ±0.5 ≥ 80 % (provisional) | inverse problem |
-| M6 | Lone pairs (5.12), `.str`/JSON writers, CLI, OpenMM/GROMACS export | B3 molecules build in OpenMM; `.str` matches fixture layout | — |
-| M7 | External validation on B5; calibrate on B5-dev; final report | section 1 targets on B5-test | needs D4 |
+| M6 | Lone pairs (5.12), `.str`/JSON writers, CLI, OpenMM/GROMACS export | B3 molecules build in OpenMM; `.str` matches fixture layout | done (2026-10-29): 34/34 B3 and all 31 B1/B2 lone-pair molecules build in OpenMM; M064 `.str` provenance as in the SI |
+| M7 | Final validation on B0–B4 against section 1; report incl. the limits that follow from D4 | section 1 targets | — |
 
 Suggested model use: default to the standard coding model for M0–M1, M3–M4, M6; consider the strongest available model
 for M2 (literal port of the backtracking resonance algorithm) and M5 (matrix inference), or when a loop stalls.
@@ -411,7 +426,8 @@ for M2 (literal port of the backtracking resonance algorithm) and M5 (matrix inf
 3. Order dependence: resonance ties and `altnum` depend on input atom order (5.3, 5.5).
 4. Undocumented v5.0 formal-charge "reset" rules (5.7); halogen-charge offset (5.12); charge-increment analogy rules
    (5.11) unconfirmed for v5.0.
-5. B1/B2 are training molecules: they bound performance from above; only B5 measures generalization.
+5. B1/B2 are training molecules: they bound performance from above. Without official outputs (D4) generalization to
+   new molecules is not measured; B4 leave-one-out (official analog choices) is the closest proxy for the analogy.
 6. Upstream updates (CGenFF 5.x): keep data pinned; treat upgrades as explicit migrations.
 7. Legal/naming: see 2.1–2.2 and D1–D4.
 
@@ -425,8 +441,8 @@ for M2 (literal port of the backtracking resonance algorithm) and M5 (matrix inf
 
 ## 11. Open decisions (owner: Carlos)
 - **D1 name** (avoid implying it is CGenFF). **D2 license** (permissive, e.g. BSD-3/MIT, recommended for adoption;
-  note `lsfitpar` is AGPL: do not copy code from it). **D3** contact the MacKerell lab (data, blessing, B5 outputs)?
-  **D4** source and license of official v5.0 outputs for B5. **D5** repository hosting (private GitHub until D1/D2;
+  note `lsfitpar` is AGPL: do not copy code from it). **D3** contact the MacKerell lab (data, blessing)?
+  **D4** decided 2026-10-29: no official program outputs (no SilcsBio access; not to be used for training); B5 dropped. **D5** repository hosting (private GitHub until D1/D2;
   avoid running git inside OneDrive).
 
 ---

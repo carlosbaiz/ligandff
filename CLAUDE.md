@@ -8,7 +8,8 @@ analogy, CHARMM `.str` output. Read `docs/SPEC.md` before any work; it defines c
 ```
 bash scripts/fetch_data.sh                 # pinned CGenFF/CHARMM data into data/ (needed by tests)
 python -m pytest -q                        # must stay green
-python -m open_cgenff.benchmarks --check-floors   # B0/B1/B2/B3/QT/QF report (production typer) -> build/report/
+python -m open_cgenff.benchmarks --check-floors   # B0/B1/B2/B3/QT/QF/QI report (production typer) -> build/report/
+open-cgenff "CC(=O)Nc1ccc(Cl)cc1" -o x.str --json x.json --psf x.psf  # CLI (pip install -e ".[dev,export]" for OpenMM)
 python -m open_cgenff.benchmarks --sets B1,B2,B3 --typer prototype/typer_pilot.py   # pilot baseline
 bash scripts/import_pi_si.sh <ci300363c_si_001.zip>  # P-I SI special cases -> data/pi_si/ (local only)
 python prototype/build_rtf_benchmark.py data/toppar_c36_releases/charmm/toppar/toppar/top_all36_cgenff.rtf build/b1.pkl

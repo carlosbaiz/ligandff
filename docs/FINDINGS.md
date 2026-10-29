@@ -193,3 +193,17 @@ Only B1-train/B2-train failures were inspected; test splits are aggregates.
   CG2R61, CG2R64), CG2D1O with an N neighbour (but ring C=C–O carbons have none, against P-I's N/O/S condition),
   ring C next to a ring N carrying an exocyclic N (CG2R64 90/100, CG2R53 4/4), aryl NH2 N (NG2S3, 96/98).
   Remaining B1-train mismatches: CG2R64 with an exocyclic N but no IMPR in the residue (8; e.g. 23001G).
+
+## 9. Output and export (M6)
+- Halogen lone pairs: the v5.0 RTF has 66 LONEPAIR COLINEAR lines, all at 1.64/1.89/2.20 Å (Cl/Br/I; no DIST 0.0),
+  two of them on aliphatic halogens (SM200 BRGA1, SM211 CLGA1; not generated: P-X puts lone pairs on aromatic
+  halogens only). On the B2-train residues with aromatic-halogen lone pairs, halogen charge − increment charge is −0.05 e
+  for most monohalides (CHLB/PCLT/PMHA −0.06, BROB −0.049, IODB/SM196–SM205 −0.05) and between −0.04 and +0.03 e in
+  polyhalobenzenes, whose other atoms are also hand-adjusted (up to 0.1 e): "halogen = increment − 0.05" stays.
+  Hygiene note: the calibration script also printed the per-residue rows of 7 B2-test residues (dihalo-/trihalobenzenes
+  and SM207); they were not used for any decision, and the rule was not changed.
+- OpenMM: our PSF (XPLOR types, NUMLP section) + `CharmmParameterSet(rtf, prm, .str)` builds systems for all 34 B3
+  molecules and all 31 B1/B2 molecules with lone pairs; the virtual site lands 1.64 Å beyond Cl on the C–Cl axis.
+  The CGenFF parameter file defines LPH with zero LJ. Pipeline on all 2,040 B1/B2 molecules: no crash, no typing
+  error; 54 molecules need at least one analog parameter (training residues whose types we get wrong, or the
+  linear-centre dihedrals of FINDINGS §8). ~0.5 s per molecule including the OpenMM build.
