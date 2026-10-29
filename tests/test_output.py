@@ -121,3 +121,31 @@ def test_gromacs_export(toppar, tmp_path):
     assert 'FGR1' in open(top).read() and len(open(gro).read().splitlines()) == len(r.atoms) + 3
     with pytest.raises(NotImplementedError):                       # lone pairs: not through ParmEd
         write_gromacs(parameterize(read_molecule('Clc1ccccc1', 'CLB'), toppar=toppar), str(tmp_path / 'clb'), toppar)
+
+
+def test_linear_centre_dihedrals_omitted(toppar):
+    """Dihedrals through C#N / C#C without a parameter get no analog (FINDINGS §11); exact ones are kept."""
+    r = parameterize(read_molecule('CC#N', 'ACN'), toppar=toppar)
+    assert r.param_penalty == 0 and not r.analogs and len(r.assignment.omitted) == 3
+    assert all(t[1] == 'CG1N1' or t[2] == 'CG1N1' for _, t in r.assignment.omitted)
+    assert to_report(r)['omitted_dihedrals'][0] == ['N3', 'C2', 'C1', 'H4']
+    r = parameterize(read_molecule('N#Cc1ccccc1', 'BZN'), toppar=toppar)
+    assert not r.assignment.omitted                                 # NG1T1 CG1N1 CG2R61 CG2R61 exists (CNP2)
+    assert any(p.types == ('NG1T1', 'CG1N1', 'CG2R61', 'CG2R61') for p in r.assignment.parameters)
+
+
+def test_coordinates_from_input_bond_orders(toppar):
+    """Embedding uses the input molecule: rule formal charges (P- in phosphates) would fail as single bonds."""
+    from open_cgenff.export import coordinates
+    r = parameterize(read_molecule('COP(=O)([O-])[O-]', 'MP'), toppar=toppar)
+    assert r.coords is None and r.source is not None
+    assert len(coordinates(r, toppar)) == len(r.atoms)
+
+
+def test_output_check_one_molecule(toppar):
+    pytest.importorskip('openmm')
+    from open_cgenff.benchmarks import b3
+    from open_cgenff.benchmarks.out import check_molecule
+    case = next(c for c in b3.build()[0] if c.name == 'MSCN')
+    row = check_molecule(case, toppar)
+    assert row['built'] and row['finite'] and not row['errors'] and row['param_penalty'] < 10

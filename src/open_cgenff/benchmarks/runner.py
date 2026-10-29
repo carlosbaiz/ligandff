@@ -2,9 +2,10 @@
 Set QT is the charge formula check on the training residues (FINDINGS 2.2); set QF checks the production typing-rule
 formal charges against the charges implied by the B1/B2 reference residues (SPEC 5.7); set QI checks the improper
 centres from typing-rule `impr` actions against the IMPR lines of those residues (SPEC 5.13); set B4 is the
-leave-one-out test of the analogy search on the program's own analogies recorded in the parameter file (SPEC 5.10).
+leave-one-out test of the analogy search on the program's own analogies recorded in the parameter file (SPEC 5.10);
+set OUT (not run by default, needs OpenMM) builds an OpenMM system from the output of every B1/B2/B3 molecule.
 
-usage: python -m open_cgenff.benchmarks [--sets B0,B1,B2,B3,B4,QT,QF,QI] [--typer FILE] [--charge-engine FILE]
+usage: python -m open_cgenff.benchmarks [--sets B0,B1,B2,B3,B4,QT,QF,QI[,OUT]] [--typer FILE] [--charge-engine FILE]
                                         [--toppar DIR] [--out DIR] [--check-floors]
 Hygiene (SPEC 7.2): confusion pairs and per-molecule failures are reported for development splits only.
 """
@@ -19,6 +20,7 @@ from .. import banner
 from ..charges import IncrementTable, assign_charges, training_check
 from ..paths import REPO_ROOT, TOPOLOGY_FILE, INCREMENTS_FILE, toppar_dir
 from . import b0, b1, b2, b3, b4, floors, qf, qi
+from . import out as output
 from .common import load_typer
 from .scoring import score_typing
 
@@ -72,7 +74,7 @@ def run(sets=DEFAULT_SETS, typer=DEFAULT_TYPER, charge_engine=PRODUCTION, toppar
     if "QT" in sets:
         report["QT"] = training_check(toppar).as_dict()
     for name, module in (("B1", b1), ("B2", b2)):
-        if name in sets or "QF" in sets or "QI" in sets:
+        if {name, "QF", "QI", "OUT"} & set(sets):
             built[name] = module.build(toppar_dir(toppar) / TOPOLOGY_FILE)
         if name in sets:
             cases, stats = built[name]
@@ -82,14 +84,18 @@ def run(sets=DEFAULT_SETS, typer=DEFAULT_TYPER, charge_engine=PRODUCTION, toppar
                                                IncrementTable.from_toppar(toppar_dir(toppar)), n_confusions)
     if "QI" in sets:
         report["QI"] = qi.score_impropers({k: v[0] for k, v in built.items()}, _production_typed, n_confusions)
+    if "B3" in sets or "OUT" in sets:
+        built["B3"] = b3.build()
     if "B3" in sets:
-        cases, excluded = b3.build()
+        cases, excluded = built["B3"]
         report["B3"] = {"build": {"molecules": len(cases), "excluded": excluded},
                         "typing": score_typing(cases, type_molecule, n_confusions)}
     if "B4" in sets:
         from ..params import default_engine
         engine = default_engine(toppar)
         report["B4"] = b4.score(engine, b4.build(engine.db), n_examples=n_confusions)
+    if "OUT" in sets:
+        report["OUT"] = output.score_output({k: v[0] for k, v in built.items()}, toppar)
     report["floor_violations"] = floors.check(report)
     return report
 
@@ -180,6 +186,20 @@ def to_markdown(report, confusions=True):
                     f"{x['found'][0] + ' (' + str(x['found'][1]) + ')' if x['found'] else '-'} |"
                     for x in report["B4"]["examples"]]
             out.append("")
+    if "OUT" in report:
+        r = report["OUT"]
+        cols = ["molecules", "ok", "pipeline_errors", "openmm_built", "with_lone_pairs", "with_analogs",
+                "missing_parameters"] + [f"param_penalty {b}" for _, b in output.PENALTY_BINS]
+        out_md = ["## OUT: pipeline output builds an OpenMM system (SPEC 1, 5.14)", "",
+                  f"pipeline (typing, parameters, charges, lone pairs): {r['molecules_per_second']:.1f} molecules/s per "
+                  f"core; OpenMM build from `.str` + PSF + CGenFF files, {r['processes']} processes", "",
+                  "| set/split | " + " | ".join(c.replace("_", " ") for c in cols) + " |", "|---" * (len(cols) + 1) + "|"]
+        out_md += [f"| {k} | " + " | ".join(str(m.get(c, 0)) for c in cols) + " |" for k, m in r["splits"].items()]
+        out_md.append("")
+        if confusions and r["failures"]:
+            out_md += ["Failures, development splits:", ""] + [f"- {x['set']} {x['name']}: {'; '.join(x['errors'])}"
+                                                              for x in r["failures"]] + [""]
+        out += out_md
     v = report["floor_violations"]
     out += ["## Regression floors (SPEC 7.4)", "", "all met" if not v else "\n".join(f"- FAIL: {x}" for x in v), ""]
     return "\n".join(out)

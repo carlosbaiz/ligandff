@@ -36,6 +36,7 @@ class Result:
     coords: list = None               # input coordinates (Angstrom), if any
     warnings: list = field(default_factory=list)
     errors: list = field(default_factory=list)       # typing errors: the output should not be used as is
+    source: object = None             # the InputMolecule (bond orders for coordinate generation), if known
 
     @property
     def net_charge(self):
@@ -68,8 +69,10 @@ def increment_table(toppar=None):
 def parameterize(mol, name=None, toppar=None, engine=None, table=None):
     """Full assignment for an InputMolecule (explicit hydrogens, bond orders or aromatic flags)."""
     words = (name or mol.name or "").split()
-    return parameterize_typed(type_molecule(mol), words[0][:6] if words else DEFAULT_RESNAME, toppar, engine, table,
-                              mol.coords)
+    result = parameterize_typed(type_molecule(mol), words[0][:6] if words else DEFAULT_RESNAME, toppar, engine, table,
+                                mol.coords)
+    result.source = mol
+    return result
 
 
 def parameterize_typed(typed, name=DEFAULT_RESNAME, toppar=None, engine=None, table=None, coords=None):

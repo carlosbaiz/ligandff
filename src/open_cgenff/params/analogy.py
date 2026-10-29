@@ -172,6 +172,7 @@ class AssignedParameter:
 class ParameterAssignment:
     parameters: list = field(default_factory=list)       # [AssignedParameter], one per instance
     missing: list = field(default_factory=list)          # [(kind, types)] with no candidate at all
+    omitted: list = field(default_factory=list)          # [(atoms, types)] linear-centre dihedrals left out
 
     @property
     def param_penalty(self):
@@ -204,8 +205,14 @@ def _orient(db, kind, atoms, types):
     return tuple(atoms), tuple(types)
 
 
+# sp centres (C#N, C#C): CGenFF defines only two dihedrals through them (CNP2, XCN, k <= 0.01) and the program
+# recorded no analog for any, although its batch added molecules with such dihedrals (FINDINGS §11)
+LINEAR_CENTRES = frozenset({"CG1N1", "CG1T1", "CG1T2"})
+
+
 def assign_parameters(mol, engine):
-    """Exact parameters or analogs for every bonded term of a TypedMolecule (SPEC 5.9)."""
+    """Exact parameters or analogs for every bonded term of a TypedMolecule (SPEC 5.9). A dihedral through a linear
+    centre without an exact parameter is omitted (no analog, no penalty)."""
     db = engine.db
     out = ParameterAssignment()
     for kind, atoms in molecule_instances(mol):
@@ -223,6 +230,9 @@ def assign_parameters(mol, engine):
                 if orient == -1:
                     atoms, types = atoms[::-1], types[::-1]
                 out.parameters.append(AssignedParameter(kind, atoms, types, prm))
+                continue
+            if kind == "dihedral" and LINEAR_CENTRES & set(types[1:3]):
+                out.omitted.append((atoms, types))
                 continue
         res = engine.find(kind, types)
         if res is None:

@@ -71,3 +71,10 @@ After M3: 895/904 (99.0 %), 220/226 (97.3 %), 720/728 (98.9 %), 178/182 (97.8 %)
     substitutions beat the program's source (FINDINGS §10). B4 (same source / TPS ±0.5): provisional model
     (train-only learning, batch-era pool) 76.3/81.0 % on a train sample → train 93.0/92.6 %, test 92.1/92.5 %.
     B0 exact (M064 analog unchanged); B1/B2/B3 typing, QF and QI unchanged (no typing change).
+
+## M7: linear-centre dihedrals (2026-10-29)
+12. `params/analogy.py:LINEAR_CENTRES`: a dihedral whose inner atom is CG1N1, CG1T1 or CG1T2 and that has no exact
+    parameter is omitted (no analog, no penalty). Motivating molecules (dev splits): ACN, PNTY, HXYN, HPTY, OCTY, BEYN,
+    CYBZ, BCYU, BDCG, 2300AK, 2300OV, 2300OW, 2300PB, 2300PD, 2300PI, 2300Y9 (penalties 113–3,147 for correctly typed
+    training residues). Evidence: FINDINGS §11. Deltas: B0 exact; B1/B2/B3 typing, QT, QF, QI and B4 unchanged (B4
+    calls the search directly); set OUT: molecules with analogs 68 → 47, param penalty > 50: 47 → 26.

@@ -96,6 +96,7 @@ def to_report(result):
                         "charge": lp.charge} for lp in result.lone_pairs],
         "analog_parameters": [{"kind": k, "missing": list(t), "source": list(a.source), "penalty": a.penalty}
                               for (k, t), a in result.analogs.items()],
+        "omitted_dihedrals": [[names[i] for i in atoms] for atoms, _ in result.assignment.omitted],
         "warnings": list(result.warnings),
         "errors": list(result.errors),
     }

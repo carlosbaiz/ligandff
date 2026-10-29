@@ -12,25 +12,49 @@ from .paths import PARAMETER_FILE, TOPOLOGY_FILE, toppar_dir
 
 
 def coordinates(result, toppar=None, seed=42):
-    """Input coordinates, or an RDKit embedding of the connectivity (Angstrom; a starting geometry only: bond orders
-    are not used), for the real atoms."""
+    """Input coordinates, or an RDKit embedding (Angstrom; a starting geometry only) for the real atoms: of the input
+    molecule with its bond orders and formal charges when the result has one, else of the connectivity alone."""
     if result.coords is not None:
         return [tuple(c) for c in result.coords]
     from rdkit import Chem
     from rdkit.Chem import AllChem
+    mols = []
+    if result.source is not None:
+        mols.append(_rdkit_input(result.source))
     elements = default_engine(toppar).db.elements
+    mols.append(_rdkit_graph([elements[a.type][1] for a in result.atoms], [(i, j, 1) for i, j in result.bonds]))
+    for mol in mols:
+        try:
+            mol.UpdatePropertyCache(strict=False)
+            Chem.GetSymmSSSR(mol)
+            if AllChem.EmbedMolecule(mol, randomSeed=seed, useRandomCoords=True) == 0:
+                return [tuple(p) for p in mol.GetConformer().GetPositions()]
+        except (ValueError, RuntimeError):            # RDKit valence errors (e.g. P- with four single bonds)
+            continue
+    raise ValueError(f"{result.name}: could not generate coordinates")
+
+
+def _rdkit_graph(elements, bonds, charges=None):
+    from rdkit import Chem
+    from .molecule import AROMATIC
+    kinds = {1: Chem.BondType.SINGLE, 2: Chem.BondType.DOUBLE, 3: Chem.BondType.TRIPLE, AROMATIC: Chem.BondType.AROMATIC}
     rw = Chem.RWMol()
-    for a in result.atoms:
-        atom = Chem.Atom(elements[a.type][1])
+    for k, el in enumerate(elements):
+        atom = Chem.Atom(el)
         atom.SetNoImplicit(True)                          # every H is explicit
+        atom.SetFormalCharge(charges[k] if charges else 0)
         rw.AddAtom(atom)
-    for i, j in result.bonds:
-        rw.AddBond(i, j, Chem.BondType.SINGLE)
-    mol = rw.GetMol()
-    mol.UpdatePropertyCache(strict=False)
-    if AllChem.EmbedMolecule(mol, randomSeed=seed, useRandomCoords=True) != 0:
-        raise ValueError(f"{result.name}: could not generate coordinates")
-    return [tuple(p) for p in mol.GetConformer().GetPositions()]
+    for i, j, order in bonds:
+        rw.AddBond(i, j, kinds[order])
+        if order == AROMATIC:
+            for k in (i, j):
+                rw.GetAtomWithIdx(k).SetIsAromatic(True)
+            rw.GetBondBetweenAtoms(i, j).SetIsAromatic(True)
+    return rw.GetMol()
+
+
+def _rdkit_input(mol):
+    return _rdkit_graph(mol.elements, mol.bonds, mol.formal_charges)
 
 
 def openmm_system(result, toppar=None, workdir=None, **create_args):

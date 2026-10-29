@@ -228,3 +228,23 @@ B4 = the 7,234 annotated parameters; split 80/20 (seed 42); only B4-train failur
 - Result (`fitted_model`, learned from B4-train only): train 93.0 % same source, 92.6 % TPS within ±0.5, 90.4 % both;
   test 92.1 %, 92.5 %, 89.4 %. Per kind (train): bonds 90/98 %, angles 91/93 %, dihedrals 94/92 %, impropers 97/98 %.
   M064 is still reproduced exactly. Full B4 run: 23 s on 14 cores.
+
+## 11. Final validation (M7)
+All section 1 targets met (`docs/VALIDATION.md`). Found on the way:
+- Linear centres. Correctly typed training residues with C≡N or C≡C (ACN, PNTY/HXYN/HPTY/OCTY, BEYN, CYBZ, 2300AK,
+  2300OV …) needed analogs for dihedrals X–CG1N1–Y–Z / X–CG1T1≡CG1T2–Y, with penalties up to ~3,000. The parameter file
+  defines only two dihedrals with a linear inner atom (NG1T1 CG1N1 CG2R61 CG2R61, 0.01; NG1T1 CG1N1 SG311 CG321, 0.006;
+  both hand-made, "by ac_aa"). The program's batch (`aa,`) added bonds and angles around new nitrile environments
+  (2300AK: CG1N1–CG301 and the angle CG301–CG1N1–NG1T1 by analogy, penalty 1.8; also 2300Y9, 23002Y, 23001U) but no
+  dihedral through CG1N1, although those molecules have them and the batch recorded every other missing term. CHARMM-GUI
+  topologies of B3 (`mescn`, `mbn`) also lack every dihedral with a linear inner atom, even the defined one (mbn: N≡C–
+  C(ar)–C(ar)); that may be the GROMACS converter, so it is supporting evidence only. Rule: omit such dihedrals when no
+  exact parameter exists. Molecules needing analogs in B1/B2/B3: 68 → 47; with param penalty > 50: 47 → 26 (all typing
+  failures except 2300YC's improper and PHOS). Charges unchanged: charge analogs of these dihedrals already exceeded the
+  cap of 50 (zero increment); on 27 RTF residues with linear centres, zero increments fit no worse than the increment
+  model's usual error (residuals 0.002–0.06 e, one 0.46 e outlier), so the charge data cannot decide.
+- Starting coordinates. Embedding the connectivity with single bonds failed for 265 B1/B2 molecules (N+ with four
+  bonds; with rule formal charges, still 29 phosphates, whose P carries −1 in CGenFF's convention). Embedding the input
+  molecule with its bond orders and input formal charges works for all 2,074.
+- Throughput: ~20 molecules/s per core for the full pipeline (typing alone 200–370/s); the OpenMM build costs ~0.5 s per
+  molecule, mostly reading the CGenFF files. Full validation: ~4 min on 14 cores.

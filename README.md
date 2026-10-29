@@ -9,6 +9,7 @@ CLI and OpenMM/GROMACS export (M6).
 
 - `docs/SPEC.md` – technical specification, benchmarks, milestones
 - `docs/FINDINGS.md` – what has been verified so far, with numbers
+- `docs/VALIDATION.md` – final validation (M7): section 1 targets, train/test, limits
 - `docs/REFERENCES.md` – papers and data sources
 
 Quick start:
@@ -17,6 +18,7 @@ pip install -e ".[dev]"
 bash scripts/fetch_data.sh      # fetches pinned CHARMM36/CGenFF 5.0 data into data/
 python -m pytest -q
 python -m open_cgenff.benchmarks --check-floors   # benchmark report in build/report/
+python -m open_cgenff.benchmarks.validation       # all sets + OpenMM build of every molecule; SPEC section 1 targets
 ```
 
 Usage (input: mol2/SDF with all hydrogens and bond orders, or SMILES):

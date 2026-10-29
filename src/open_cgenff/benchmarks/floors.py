@@ -40,6 +40,9 @@ ANALOGY_FLOORS = {  # B4: (split) -> minimum (same source, TPS within 0.5) case 
     "test": (1333, 1338),      # of 1,447
 }
 
+# OUT: every B1/B2/B3 molecule's output builds an OpenMM system (SPEC section 1; M6)
+OUTPUT_ALL_BUILD = True
+
 # QT: the increment model's fit to the training charges (FINDINGS 2.2); a change means the engine or the data changed
 CHARGE_TRAINING = {"residues": 2255, "median_rmse": 0.0098}
 
@@ -50,6 +53,11 @@ def check(report):
     b0 = report.get("B0")
     if b0 is not None and b0["exact"] != b0["molecules"]:
         problems.append(f"B0: {b0['exact']}/{b0['molecules']} molecules exact (floor: all)")
+    o = report.get("OUT")
+    if o is not None and OUTPUT_ALL_BUILD:
+        for key, m in o["splits"].items():
+            if m["ok"] != m["molecules"]:
+                problems.append(f"OUT {key}: {m['ok']}/{m['molecules']} molecules build an OpenMM system (floor: all)")
     qt = report.get("QT")
     if qt is not None and (qt["residues"] != CHARGE_TRAINING["residues"]
                            or round(qt["median_rmse"], 4) != CHARGE_TRAINING["median_rmse"]):
