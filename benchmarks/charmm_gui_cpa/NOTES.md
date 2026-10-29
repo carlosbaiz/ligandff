@@ -4,6 +4,10 @@ Source: Carlos Baiz, 2026-10-29 (`SOURCE_README.txt`). Generated with CHARMM-GUI
 `raw/<A>.itp` = molecule topology (atoms with CGenFF types and charges, bonds; no bond orders);
 `raw/cgen_<A>.itp` = parameters (`[ atomtypes ]`, bonded types).
 
+Only topologies are committed. The `cgen_<A>.itp` parameter files (CHARMM36/CGenFF values, third-party force field) are
+git-ignored and stay local; for `mbn` and `au` the two files are swapped, so `mbn.itp`/`au.itp` are the ignored ones.
+Builders read `<A>.itp`, falling back to `cgen_<A>.itp`.
+
 Known issues (do not "fix" the files; handle in code):
 - `glycerol`: CHARMM36 carbohydrate types (CC322, HCA2, OC311 …), not CGenFF → excluded from CGenFF scoring.
 - `mbn`: `mbn.itp` and `cgen_mbn.itp` contents are swapped. Charges are custom ("charges from Min Cho's paper") and sum

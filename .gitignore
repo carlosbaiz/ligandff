@@ -14,3 +14,4 @@ benchmarks/charmm_gui_cpa/raw/cgen_*.itp
 !benchmarks/charmm_gui_cpa/raw/cgen_au.itp
 benchmarks/charmm_gui_cpa/raw/mbn.itp
 benchmarks/charmm_gui_cpa/raw/au.itp
+*.egg-info/

@@ -1,12 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "open-cgenff"            # working name; see docs/SPEC.md section 11 (naming is an open decision)
-version = "0.0.1"
+version = "0.1.0.dev0"
 description = "Open-source, CGenFF-compatible atom typing and parameter/charge assignment (clean-room reimplementation)"
 requires-python = ">=3.10"
 dependencies = ["rdkit>=2024.3", "networkx>=3.0"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+
+[project.scripts]
+open-cgenff-bench = "open_cgenff.benchmarks.runner:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

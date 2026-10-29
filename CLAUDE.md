@@ -8,6 +8,7 @@ analogy, CHARMM `.str` output. Read `docs/SPEC.md` before any work; it defines c
 ```
 bash scripts/fetch_data.sh                 # pinned CGenFF/CHARMM data into data/ (needed by tests)
 python -m pytest -q                        # must stay green
+python -m open_cgenff.benchmarks --check-floors   # B0/B1/B3 report -> build/report/{report.md,report.json}
 python prototype/build_rtf_benchmark.py data/toppar_c36_releases/charmm/toppar/toppar/top_all36_cgenff.rtf build/b1.pkl
 python prototype/score.py build/b1.pkl prototype/typer_pilot.py --examples 30          # train-split failures only
 python prototype/charmmgui_benchmark.py benchmarks/charmm_gui_cpa/raw prototype/typer_pilot.py
@@ -30,4 +31,4 @@ python prototype/charges.py fixtures --toppar data/toppar_c36_releases/charmm/to
 
 ## Layout
 `docs/` spec, findings, references, rules changelog · `prototype/` pilot code (reference) · `tests/` pytest +
-fixtures · `benchmarks/` benchmark data and split manifests · `scripts/` data fetch · `src/` production package (to create in M0)
+fixtures · `benchmarks/` benchmark data and split manifests · `scripts/` data fetch · `src/open_cgenff/` production package · `.github/workflows/ci.yml` CI (tests + floors)

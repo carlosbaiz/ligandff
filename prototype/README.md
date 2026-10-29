@@ -1,6 +1,8 @@
 # Prototype (pilot) code: frozen reference baseline
 
 Written during the feasibility study (2026-10-29). Not production code: do not import from `src/`; port instead.
+Ported in M0: `build_rtf_benchmark.py`, `score.py`, `charmmgui_benchmark.py` → `src/open_cgenff/benchmarks/`.
+Bug fix (M0): `charmmgui_benchmark.py` finds topologies stored only as `cgen_<A>.itp` (git-ignored `<A>.itp`).
 Paths below assume `TP=data/toppar_c36_releases/charmm/toppar/toppar` after `scripts/fetch_data.sh`.
 
 | file | what it does | status / result |
