@@ -92,7 +92,8 @@ src/open_cgenff/       (package name follows the working name; rename with D1)
   perception/  rings.py (5.2), resonance.py (5.3), aromaticity.py (5.4)
   typing/      engine.py (P-I rule language interpreter, 5.5); rules/cgenff_v5.rules (5.6)
   params/      database.py (5.8), penalties.py + rules/penalties_v5.rules (5.9-5.10), analogy.py
-  charges/     increments.py, penalties.py (5.11)
+  charges/     increments.py, penalties.py (5.11), training.py (formula check, FINDINGS 2.2)
+  molecule.py  TypedMolecule: types + typing-rule formal charges handed from typing to charges/parameters
   lonepairs.py (5.12)
   cli.py
   benchmarks/  B0/B1/B3 builders, scoring, runner producing JSON/markdown reports (section 7);
@@ -246,7 +247,9 @@ Accept: see M5.
 - Training (only needed to extend CGenFF; increments are published): three-stage restrained least squares
   (bonds → angles → dihedrals; restraint k = 10⁻³ in 2012; P-v5 scanned 42 values from 10⁻⁴ to 5×10⁻¹⁷ and kept the
   model best correlated with the previous version), rounding to 0.001 e, constraints of P-II Table S1.
-Status: `prototype/charges.py` reproduces program 5.0 output exactly (charges and penalties) on all three SI molecules.
+Status: production engine `open_cgenff.charges` (M1; API `IncrementTable`, `assign_charges`, `charge_molecule`,
+`Analog`) reproduces program 5.0 output exactly on B0 and is identical to `prototype/charges.py` on all training
+residues. Analog parameters are still supplied by the caller until the analogy engine exists (M4).
 
 ### 5.12 Halogen lone pairs (P-X)
 Aromatic Cl/Br/I get a massless, LJ-free virtual site, colinear with C–X, at 1.64 / 1.89 / 2.20 Å from X, charge +0.05 e
@@ -305,7 +308,7 @@ B3 molecules; energies match CHARMM where CHARMM is available.
 
 ### 7.4 Regression floors (current pilot; CI must enforce, production must beat)
 B0 exact; B1-train ≥ 874/904 (96.68 %, printed 96.7 %), B1-test ≥ 212/226 (93.81 %) molecules fully correct;
-B3 100 % (34/34). Enforced as exact counts in `src/open_cgenff/benchmarks/floors.py` and by CI
+B3 100 % (34/34); QT = 2,255 residues, median RMSE 0.0098 e (FINDINGS §2.2). Enforced as exact counts in `src/open_cgenff/benchmarks/floors.py` and by CI
 (`.github/workflows/ci.yml`).
 
 ## 8. Milestones
@@ -313,7 +316,7 @@ B3 100 % (34/34). Enforced as exact counts in `src/open_cgenff/benchmarks/floors
 | | milestone | acceptance | notes |
 |---|---|---|---|
 | M0 | Package skeleton, CI (pytest), data fetch, benchmark runner (port `prototype/score.py`, `build_rtf_benchmark.py`, `charmmgui_benchmark.py`) | `pytest` green incl. prototype tests; runner writes report for B0/B1/B3 | done (2026-10-29) |
-| M1 | Production charge engine (5.11) behind a clean API; formal charges passed from typing | B0 exact; training check reproduces FINDINGS §2.2 | port `prototype/charges.py` |
+| M1 | Production charge engine (5.11) behind a clean API; formal charges passed from typing | B0 exact; training check reproduces FINDINGS §2.2 | done (2026-10-29); runner set QT |
 | M2 | Perception (5.2–5.4) incl. literal P-I resonance algorithm; build B2 | P-I worked examples; 126 P-I special cases run; B2 built (≥ 900 residues) | algorithmically subtle |
 | M3 | Rule engine (5.5) + rule file v1 (5.6–5.7): Appendix A + port of pilot rules, then extend to B2 types | B1-train ≥ 99 %, B1-test ≥ 96 %, B2-train ≥ 98 %, B2-test ≥ 95 %, B3 100 %; rules changelog complete | bulk of the work: failure-driven loop |
 | M4 | Parameter DB + analogy engine (5.8–5.9) with a provisional matrix | M064 fixture analog reproduced; unit tests for TPS composition (inner ×10, bond groups, reversal) | — |
