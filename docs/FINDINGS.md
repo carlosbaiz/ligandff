@@ -33,6 +33,9 @@ per-molecule RMSE 0.0098 e; 76.0 % of atoms within 0.01 e, 94.0 % within 0.05 e 
 P-II reported 0.0082 e RMSD for the 2012 fit). Inferred formal charges match P-I's description: −1 on the carboxylate
 carbon (CG2O3, 133/135), +1 on amidinium/guanidinium carbons (CG2N2, CG2N1), +1 on ammonium N (NG3P0-3), +1 on some
 NG2R61 (pyridinium-type) and CG2R53 (imidazolium C2), −1 PG1, −2 PG2, −1 OG312/SG302/SG3O1.
+The full list of inferred (type, q0) pairs is in the benchmark report (set QT, M1). Other frequent pairs not covered
+above: CG2R63 +1 (36 atoms), OG2D1 −1 (19), OG2D2 −1 (12), SG2D1 −1 (11), CG2R64 +1 (10); plus a tail of 1–7-atom
+pairs (e.g. CG2R61 ±1) that may be fit residuals > 0.5 e rather than rule charges. To be resolved in M3 (SPEC 5.7).
 
 ### 2.3 Halogen lone pairs
 P-X: LP charge +0.05 e fixed, no LJ, colinear, 1.64/1.89/2.20 Å for Cl/Br/I (matches the RTF). Halogen charge offset is
