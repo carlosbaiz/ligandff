@@ -78,13 +78,19 @@ def potential_energy(system, positions):
 
 
 def write_gromacs(result, prefix, toppar=None):
-    """<prefix>.top and <prefix>.gro via ParmEd (optional dependency) from the OpenMM system."""
+    """<prefix>.top and <prefix>.gro via ParmEd (optional dependency) from the OpenMM system.
+
+    Not for molecules with halogen lone pairs: ParmEd's OpenMM importer drops virtual-site definitions, so the lone
+    pair would become a free particle. Use the .str with the Lemkul lab's cgenff_charmm2gmx converter for those."""
+    if result.lone_pairs:
+        raise NotImplementedError(f"{result.name}: GROMACS export of halogen lone pairs is not supported through "
+                                  "ParmEd; convert the .str with cgenff_charmm2gmx instead")
     try:
         import parmed
     except ImportError as exc:
         raise RuntimeError("GROMACS export needs ParmEd: pip install parmed") from exc
     system, psf, positions = openmm_system(result, toppar)
     structure = parmed.openmm.load_topology(psf.topology, system, xyz=positions)
-    structure.save(f"{prefix}.top", overwrite=True)
-    structure.save(f"{prefix}.gro", overwrite=True)
+    structure.save(f"{prefix}.top", overwrite=True, combine="all")
+    structure.save(f"{prefix}.gro", overwrite=True, combine="all")
     return f"{prefix}.top", f"{prefix}.gro"

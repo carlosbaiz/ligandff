@@ -21,7 +21,8 @@ def main(argv=None):
     ap.add_argument("--json", help="also write a JSON report (types, charges, penalties, parameter provenance)")
     ap.add_argument("--name", help="residue name (default: molecule name, else LIG)")
     ap.add_argument("--psf", help="also write a CHARMM PSF (for OpenMM's CharmmPsfFile)")
-    ap.add_argument("--gromacs", metavar="PREFIX", help="also write PREFIX.top/.gro (needs OpenMM and ParmEd)")
+    ap.add_argument("--gromacs", metavar="PREFIX",
+                    help="also write PREFIX.top/.gro (needs OpenMM and ParmEd; not for molecules with lone pairs)")
     ap.add_argument("--toppar", help="CHARMM toppar directory (default: data/ from scripts/fetch_data.sh)")
     ap.add_argument("--version", action="version", version=banner())
     args = ap.parse_args(argv)

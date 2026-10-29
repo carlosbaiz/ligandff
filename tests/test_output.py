@@ -116,6 +116,8 @@ def test_gromacs_export(toppar, tmp_path):
     pytest.importorskip('openmm')
     pytest.importorskip('parmed')
     from open_cgenff.export import write_gromacs
-    r = parameterize(read_molecule('Clc1ccccc1C(=O)O', 'CBA'), toppar=toppar)
-    top, gro = write_gromacs(r, str(tmp_path / 'cba'), toppar)
-    assert 'CLGR1' in open(top).read() and len(open(gro).read().splitlines()) == len(r.atoms) + 1 + 3
+    r = parameterize(read_molecule('Fc1ccccc1C(=O)O', 'FBA'), toppar=toppar)
+    top, gro = write_gromacs(r, str(tmp_path / 'fba'), toppar)
+    assert 'FGR1' in open(top).read() and len(open(gro).read().splitlines()) == len(r.atoms) + 3
+    with pytest.raises(NotImplementedError):                       # lone pairs: not through ParmEd
+        write_gromacs(parameterize(read_molecule('Clc1ccccc1', 'CLB'), toppar=toppar), str(tmp_path / 'clb'), toppar)
