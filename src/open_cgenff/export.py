@@ -1,6 +1,6 @@
 """OpenMM and GROMACS export (SPEC 5.14), reusing established readers/converters rather than new force-field code:
-OpenMM's CHARMM PSF/parameter readers build the system from the CGenFF files plus our .str; ParmEd (optional) converts
-that system to GROMACS .top/.gro.
+OpenMM's CHARMM PSF/parameter readers build the system from the CGenFF files plus our .str; ParmEd's (optional) CHARMM
+readers do the same for GROMACS .top/.gro.
 """
 import tempfile
 from pathlib import Path
@@ -53,7 +53,7 @@ def openmm_system(result, toppar=None, workdir=None, **create_args):
     psf_path, str_path = workdir / f"{result.name}.psf", workdir / f"{result.name}.str"
     write_psf(result, masses, psf_path)
     write_str(result, str_path)
-    params = app.CharmmParameterSet(str(toppar / TOPOLOGY_FILE), str(toppar / PARAMETER_FILE), str(str_path))
+    params = app.CharmmParameterSet(*_parameter_files(toppar, str_path))
     psf = app.CharmmPsfFile(str(psf_path))
     args = {"nonbondedMethod": app.NoCutoff, "constraints": None}
     args.update(create_args)
@@ -68,6 +68,10 @@ def openmm_system(result, toppar=None, workdir=None, **create_args):
     return system, psf, positions
 
 
+def _parameter_files(toppar, str_path):
+    return str(toppar / TOPOLOGY_FILE), str(toppar / PARAMETER_FILE), str(str_path)
+
+
 def potential_energy(system, positions):
     """Potential energy (kJ/mol) on the Reference platform."""
     import openmm
@@ -78,10 +82,11 @@ def potential_energy(system, positions):
 
 
 def write_gromacs(result, prefix, toppar=None):
-    """<prefix>.top and <prefix>.gro via ParmEd (optional dependency) from the OpenMM system.
+    """<prefix>.top and <prefix>.gro via ParmEd (optional dependency) from our PSF + the CGenFF files + our
+    .str (ParmEd's CHARMM readers, so the CGenFF atom type names are kept).
 
-    Not for molecules with halogen lone pairs: ParmEd's OpenMM importer drops virtual-site definitions, so the lone
-    pair would become a free particle. Use the .str with the Lemkul lab's cgenff_charmm2gmx converter for those."""
+    Not for molecules with halogen lone pairs: ParmEd does not carry CHARMM lone pairs into GROMACS virtual sites, so
+    the lone pair would become a free particle. Use the .str with the Lemkul lab's cgenff_charmm2gmx converter for those."""
     if result.lone_pairs:
         raise NotImplementedError(f"{result.name}: GROMACS export of halogen lone pairs is not supported through "
                                   "ParmEd; convert the .str with cgenff_charmm2gmx instead")
@@ -89,8 +94,16 @@ def write_gromacs(result, prefix, toppar=None):
         import parmed
     except ImportError as exc:
         raise RuntimeError("GROMACS export needs ParmEd: pip install parmed") from exc
-    system, psf, positions = openmm_system(result, toppar)
-    structure = parmed.openmm.load_topology(psf.topology, system, xyz=positions)
-    structure.save(f"{prefix}.top", overwrite=True, combine="all")
-    structure.save(f"{prefix}.gro", overwrite=True, combine="all")
+    from parmed.charmm import CharmmParameterSet, CharmmPsfFile
+    masses = default_engine(toppar).db.file.masses
+    xyz = coordinates(result, toppar)
+    with tempfile.TemporaryDirectory() as workdir:
+        psf_path, str_path = Path(workdir) / f"{result.name}.psf", Path(workdir) / f"{result.name}.str"
+        write_psf(result, masses, psf_path)
+        write_str(result, str_path)
+        structure = CharmmPsfFile(str(psf_path))
+        structure.load_parameters(CharmmParameterSet(*_parameter_files(toppar_dir(toppar), str_path)))
+    structure.coordinates = xyz                           # Angstrom; types and CHARMM terms kept from the PSF/files
+    structure.save(f"{prefix}.top", format="gromacs", overwrite=True, combine="all")
+    structure.save(f"{prefix}.gro", overwrite=True)
     return f"{prefix}.top", f"{prefix}.gro"

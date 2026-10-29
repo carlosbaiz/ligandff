@@ -349,7 +349,7 @@ B3 molecules; energies match CHARMM where CHARMM is available.
 Status: done (M6): `pipeline.py` (`read_molecule`, `parameterize`, `parameterize_typed`), `io/stream.py` (`.str` in
 the section 3 layout + JSON report), `io/psf.py` (PSF with NUMLP lone pairs), `export.py` (OpenMM through
 `CharmmPsfFile` + `CharmmParameterSet(top_all36_cgenff.rtf, par_all36_cgenff.prm, our .str)`; GROMACS `.top/.gro`
-through ParmEd from that system, molecules without lone pairs only: ParmEd's OpenMM importer drops virtual sites, so
+through ParmEd's CHARMM readers from the same files, molecules without lone pairs only: ParmEd does not convert CHARMM lone pairs, so
 for halogenated aromatics the `.str` goes through `cgenff_charmm2gmx`), `cli.py` (`open-cgenff INPUT -o x.str --json --psf --gromacs`). All 34 B3 molecules
 and all 2,040 B1/B2 molecules run through the pipeline without typing errors; every B3 molecule and every B1/B2
 molecule with lone pairs (31) builds an OpenMM system with the virtual site on the C–X axis (tests). The analog lines
