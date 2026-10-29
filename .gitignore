@@ -1,0 +1,16 @@
+# Third-party force-field data: fetched by scripts/fetch_data.sh, never committed (no explicit license)
+data/
+# Generated benchmark pickles and reports
+build/
+# Papers and SI are copyrighted: keep PDFs outside the repo (see docs/REFERENCES.md)
+*.pdf
+__pycache__/
+*.pyc
+.pytest_cache/
+# B3 parameter files (CHARMM36/CGenFF values; third-party force field, never commit). Topologies (<A>.itp) are kept.
+# mbn and au have their two files swapped: there the topology is cgen_<A>.itp (see benchmarks/charmm_gui_cpa/NOTES.md).
+benchmarks/charmm_gui_cpa/raw/cgen_*.itp
+!benchmarks/charmm_gui_cpa/raw/cgen_mbn.itp
+!benchmarks/charmm_gui_cpa/raw/cgen_au.itp
+benchmarks/charmm_gui_cpa/raw/mbn.itp
+benchmarks/charmm_gui_cpa/raw/au.itp

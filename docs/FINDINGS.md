@@ -1,0 +1,105 @@
+# Findings so far (feasibility study and pilot, 2026-10-28/29)
+
+Everything here was measured with the code in `prototype/` on the data pinned in `scripts/fetch_data.sh`.
+Reproduce with the commands in `prototype/README.md`.
+
+## 1. Feasibility in one paragraph
+The CGenFF program's algorithms are fully published (P-I, P-II, P-X), and the data it trains on (topology, parameters,
+and, since CGenFF 5.0, the charge increments) are public. Only two hand-built data sets are unpublished: the atom-typing
+rule file and the substitution-penalty rule file. The charge half of the program has been reproduced exactly; a
+pilot typing rule set reached 93.8 % of held-out molecules fully correct after three refinement rounds. The remaining
+effort is concentrated in typing rules (long tail) and the penalty matrix.
+
+## 2. Charges
+
+### 2.1 Exact reproduction of program 5.0 output
+`prototype/charges.py fixtures` on the three molecules printed with program-5.0 output in the P-v5 SI (Table S10):
+
+| molecule | needs analogy | charges | per-atom charge penalties |
+|---|---|---|---|
+| M064 (diisopropyl ketone) | 1 dihedral, CG311-CG2O5-CG311-CG331 from CG321-CG2O5-CG311-CG331, penalty 0.6 | exact (0.001 e) | exact (0.334 / 0.657 / 0.669 …) |
+| M166 (cyclopentanone) | none | exact | exact (all 0) |
+| M223 (indane) | none | exact | exact (all 0) |
+
+Two implementation details were settled by this test: (a) for the missing dihedral the program took the charge increments
+from the same analog parameter as the bonded terms (here the substitution is at an outer position, so the bonded and
+nonbonded matrices agree; the general rule may differ); (b) in P-II eq 4, β_n is the net charge one parameter instance
+moves onto the atom.
+
+### 2.2 Formula check on all training residues
+For 2,255 RTF residues (neutral and charged, no lone pairs or inter-residue bonds) whose increments are all present,
+increment charges + inferred integer formal charges reproduce the hand-optimized topology charges with median
+per-molecule RMSE 0.0098 e; 76.0 % of atoms within 0.01 e, 94.0 % within 0.05 e (fit residual of the increment model;
+P-II reported 0.0082 e RMSD for the 2012 fit). Inferred formal charges match P-I's description: −1 on the carboxylate
+carbon (CG2O3, 133/135), +1 on amidinium/guanidinium carbons (CG2N2, CG2N1), +1 on ammonium N (NG3P0-3), +1 on some
+NG2R61 (pyridinium-type) and CG2R53 (imidazolium C2), −1 PG1, −2 PG2, −1 OG312/SG302/SG3O1.
+
+### 2.3 Halogen lone pairs
+P-X: LP charge +0.05 e fixed, no LJ, colinear, 1.64/1.89/2.20 Å for Cl/Br/I (matches the RTF). Halogen charge offset is
+not published; on 38 halogen-LP pairs, "halogen = increment charge − 0.05" gives max error 0.04 e (mean 0.017 e);
+"halogen = increment charge" gives max 0.06 e (mean 0.035 e).
+
+## 3. Atom typing pilot
+
+### 3.1 Benchmark B1
+RTF residues with SMILES comments, mapped atom-by-atom onto RDKit molecules by graph isomorphism (only exact bond-graph
+matches kept): 1,130 molecules, 27,512 atoms, 126 types; all are v5.0 ZINC-derived training compounds (the 937 older model
+compounds have no SMILES; see B2 in SPEC §7). 94 SMILES comments had lost bond orders (radical atoms) and were repaired
+from connectivity + net charge (1 unrepairable); 264 residues were skipped (atom-count or bond-graph mismatch).
+Split 80/20 with seed 42. A naive lookup on each atom's immediate environment types ~89 % of atoms but only ~18 % of
+molecules fully correctly: whole-molecule fidelity needs explicit rules.
+
+### 3.2 Learning curve (only training-split failures were inspected while writing v1–v4)
+
+| rule set | train molecules fully correct | held-out molecules | held-out atoms |
+|---|---|---|---|
+| v1: written from MASS-line descriptions + P-I only | 50.1 % | 50.4 % | 94.9 % |
+| v2: + 1 round of failure analysis | 85.3 % | 88.5 % | 99.0 % |
+| v3: + 2 rounds | 92.9 % | 92.9 % | 99.4 % |
+| v4: + 3 rounds (= `prototype/typer_pilot.py`, ~110 rules) | 96.7 % | 93.8 % | 99.2 % |
+
+Wall time for building the benchmark and v1–v4: ~13 minutes of agent time. After v4, held-out failures were inspected
+once to characterize them (so B1-test is now semi-sealed): ring-embedded amidinium/guanidinium cations, an amine N-oxide
+(neighbouring CH2/CH typed as "adjacent to positive N"), a sulfonic acid (SG3O2, not SG3O1), a cyclic sulfinamide, and
+5/7-fused tropolone-like systems (CG2RC7).
+
+### 3.3 CGenFF conventions learned from data (not obvious from type descriptions)
+- CG2RC0: carbon of an aromatic 6-ring that is also in any 5-ring (incl. non-aromatic, e.g. indane) or 4-ring
+  (P-v5 rule); NOT for 5/5-fused systems (those keep CG2R5x types). NG2RC0 needs the 5-ring to be planar.
+- CG2R67 (biphenyl) also when the aryl–aryl bond lies in a non-aromatic ring (fluorene-, carbazole-, phenanthridine-like).
+- CG2R57: 5-ring sp2 carbon single-bonded to an atom whose smallest ring is 5-membered (aromatic or not), not only bipyrroles.
+- CG2R51/52/53 for C=C/C=N inside any 5-ring, incl. non-aromatic (3-pyrroline, maleimide); P-I's `sub NG2R5: or (arom 5) (ring2 5) (ring23 5)` agrees.
+- CG2R53 also for carbonyl carbons in 5-ring lactones/lactams and 4-ring lactams; cyclobutanone carbonyl is CG2O4 (with OG2D3).
+- CG2R64: aromatic 6-ring carbon with ≥ 2 N neighbours (ring or exocyclic).
+- CG322/CG312/CG302 by number of F (1/2/3) regardless of H count; 5-ring CH with F stays CG3C51.
+- CG3RC1 only for true fusion/bridgehead atoms of a ring system containing a ring ≤ 5; spiro atoms are not CG3RC1.
+- NG3C51: any non-amide sp3-type N in a 5-ring (incl. tertiary, N-aryl, isoxazolidine N), checked before hydrazine NG3N1.
+- NG2S3 only for NH2 on an aromatic 6-ring atom; aryl-NH-R / aryl-NR2 are NG311/NG301; NH2 on aromatic 5-ring C → NG321;
+  NH2 on cationic aromatic N → NG3N1.
+- NG2R53 only when N and the carbonyl C share a 5-ring; NG2R43 for 4-ring lactams.
+- OG3C51 also for oxetane O.
+- H: HGR62 on 6-ring aromatic C adjacent to N or to the C–F carbon (CG2R66), and on CG2R62/CG2R64; HGR63 when the ring is
+  cationic; HGP5 on C attached to NG3P0; HGPAM1/2 on NG311/NG321 unless N is bonded to S/O/N (then HGP1); HGP1 on NG3C51;
+  HGP4 on NG2S3; HGP2 on N of cationic systems (ammonium, amidinium, imidazolium).
+- "Positive N" for CG314/CG324/CG334/CG3C53/CG3C54 includes aromatic N of cationic rings and amidinium N.
+- Resonance tie-breaking matters (quinolinium: charge on ring N vs exocyclic N have equal P-I scores).
+
+### 3.4 Benchmark B3 (CHARMM-GUI, supplied by Carlos)
+39 files → 34 CGenFF-typed species scored (excluded: 3 water models, gold, glycerol with CHARMM36 carbohydrate types).
+26 of the 34 are not CGenFF reference residues. Pilot v4: 545/545 atoms, 34/34 molecules; v1 (documentation only):
+33/34 (guanidinium wrong). The set is chemically simple (polyols, glycol ethers, amides, small ions). Parameters in these
+files match CGenFF 4.6 wherever 4.6 has the term (1,403/1,403 dihedrals, 276/276 bonds) ⇒ generated with a 4.x-era
+program; its increments are not public. For the 20 molecules fully covered by exact 5.0 increments, 5.0 charges equal
+the CHARMM-GUI charges for 2 (NMA, pinacol), are within 0.01 e for 11, max 0.069 e: version drift, not a formula error.
+MBN: `mbn.itp`/`cgen_mbn.itp` contents swapped; charges custom (net 0 despite a thiolate S): typing only.
+
+## 4. Penalty matrix evidence
+`prototype/penalty_annotations.py` on `par_all36_cgenff_increments.prm`: 7,234 distinct annotated analog parameters;
+5,089 differ from their source at one position (156 bonds, 1,518 angles, 3,302 dihedrals, 113 impropers) → 107
+bonded-matrix and 280 nonbonded-matrix elements over 108 types (≈ 1 % of each ~27,000-element matrix); 106/107 and
+279/280 are internally consistent. P-II Table 1 matches the bonded matrix exactly (NG311→NG301 0.5, NG311→NG321 1.0,
+NG301→NG311 0.5, NG3C51→NG311 2.0); the nonbonded matrix differs (e.g. NG3C51→NG311 3.0, NG321→NG311 1.2).
+
+## 5. Compute
+All benchmarks run in seconds on one CPU core (RDKit). Projected cost of completing typing + penalty matrix with an
+agent loop: ~150–400 refinement rounds, ~30–160 M input tokens (mostly cache reads) + 1–4 M output tokens.

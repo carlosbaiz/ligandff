@@ -1,0 +1,610 @@
+[
+ {
+  "name": "M064",
+  "program": "CGenFF program 5.0",
+  "source": "Croitoru et al., JCTC 2025, 21, 3044; SI Table S10",
+  "param_penalty": 0.6,
+  "charge_penalty": 0.669,
+  "formal_charges": {},
+  "atoms": [
+   {
+    "name": "C1",
+    "type": "CG331",
+    "charge": -0.318,
+    "charge_penalty": 0.334
+   },
+   {
+    "name": "C2",
+    "type": "CG311",
+    "charge": 0.209,
+    "charge_penalty": 0.657
+   },
+   {
+    "name": "C3",
+    "type": "CG331",
+    "charge": -0.318,
+    "charge_penalty": 0.334
+   },
+   {
+    "name": "C4",
+    "type": "CG2O5",
+    "charge": -0.112,
+    "charge_penalty": 0.669
+   },
+   {
+    "name": "O",
+    "type": "OG2D3",
+    "charge": -0.294,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "C5",
+    "type": "CG311",
+    "charge": 0.209,
+    "charge_penalty": 0.657
+   },
+   {
+    "name": "C6",
+    "type": "CG331",
+    "charge": -0.318,
+    "charge_penalty": 0.334
+   },
+   {
+    "name": "C7",
+    "type": "CG331",
+    "charge": -0.318,
+    "charge_penalty": 0.334
+   },
+   {
+    "name": "H1",
+    "type": "HGA3",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H2",
+    "type": "HGA3",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H3",
+    "type": "HGA3",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H4",
+    "type": "HGA1",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H5",
+    "type": "HGA3",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H6",
+    "type": "HGA3",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H7",
+    "type": "HGA3",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H8",
+    "type": "HGA1",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H9",
+    "type": "HGA3",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H10",
+    "type": "HGA3",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H11",
+    "type": "HGA3",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H12",
+    "type": "HGA3",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H13",
+    "type": "HGA3",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H14",
+    "type": "HGA3",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   }
+  ],
+  "bonds": [
+   [
+    "C1",
+    "C2"
+   ],
+   [
+    "C2",
+    "C3"
+   ],
+   [
+    "C2",
+    "C4"
+   ],
+   [
+    "C4",
+    "O"
+   ],
+   [
+    "C4",
+    "C5"
+   ],
+   [
+    "C5",
+    "C6"
+   ],
+   [
+    "C5",
+    "C7"
+   ],
+   [
+    "C1",
+    "H1"
+   ],
+   [
+    "C1",
+    "H2"
+   ],
+   [
+    "C1",
+    "H3"
+   ],
+   [
+    "C2",
+    "H4"
+   ],
+   [
+    "C3",
+    "H5"
+   ],
+   [
+    "C3",
+    "H6"
+   ],
+   [
+    "C3",
+    "H7"
+   ],
+   [
+    "C5",
+    "H8"
+   ],
+   [
+    "C6",
+    "H9"
+   ],
+   [
+    "C6",
+    "H10"
+   ],
+   [
+    "C6",
+    "H11"
+   ],
+   [
+    "C7",
+    "H12"
+   ],
+   [
+    "C7",
+    "H13"
+   ],
+   [
+    "C7",
+    "H14"
+   ]
+  ],
+  "analog_parameters": [
+   {
+    "missing": [
+     "CG311",
+     "CG2O5",
+     "CG311",
+     "CG331"
+    ],
+    "source": [
+     "CG321",
+     "CG2O5",
+     "CG311",
+     "CG331"
+    ],
+    "penalty": 0.6
+   }
+  ],
+  "note": "Exact program v5.0 output transcribed from the SI; parameters listed without \"from\" are exact matches in CGenFF v5.0."
+ },
+ {
+  "name": "M166",
+  "program": "CGenFF program 5.0",
+  "source": "Croitoru et al., JCTC 2025, 21, 3044; SI Table S10",
+  "param_penalty": 0.0,
+  "charge_penalty": 0.0,
+  "formal_charges": {},
+  "atoms": [
+   {
+    "name": "O",
+    "type": "OG2D3",
+    "charge": -0.398,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "C1",
+    "type": "CG2O5",
+    "charge": 0.226,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "C2",
+    "type": "CG3C52",
+    "charge": -0.131,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "C3",
+    "type": "CG3C52",
+    "charge": -0.143,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "C4",
+    "type": "CG3C52",
+    "charge": -0.143,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "C5",
+    "type": "CG3C52",
+    "charge": -0.131,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H1",
+    "type": "HGA2",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H2",
+    "type": "HGA2",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H3",
+    "type": "HGA2",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H4",
+    "type": "HGA2",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H5",
+    "type": "HGA2",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H6",
+    "type": "HGA2",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H7",
+    "type": "HGA2",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H8",
+    "type": "HGA2",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   }
+  ],
+  "bonds": [
+   [
+    "O",
+    "C1"
+   ],
+   [
+    "C1",
+    "C2"
+   ],
+   [
+    "C2",
+    "C3"
+   ],
+   [
+    "C3",
+    "C4"
+   ],
+   [
+    "C4",
+    "C5"
+   ],
+   [
+    "C1",
+    "C5"
+   ],
+   [
+    "C2",
+    "H1"
+   ],
+   [
+    "C2",
+    "H2"
+   ],
+   [
+    "C3",
+    "H3"
+   ],
+   [
+    "C3",
+    "H4"
+   ],
+   [
+    "C4",
+    "H5"
+   ],
+   [
+    "C4",
+    "H6"
+   ],
+   [
+    "C5",
+    "H7"
+   ],
+   [
+    "C5",
+    "H8"
+   ]
+  ],
+  "analog_parameters": [],
+  "note": "Exact program v5.0 output transcribed from the SI; parameters listed without \"from\" are exact matches in CGenFF v5.0."
+ },
+ {
+  "name": "M223",
+  "program": "CGenFF program 5.0",
+  "source": "Croitoru et al., JCTC 2025, 21, 3044; SI Table S10",
+  "param_penalty": 0.0,
+  "charge_penalty": 0.0,
+  "formal_charges": {},
+  "atoms": [
+   {
+    "name": "C1",
+    "type": "CG3C52",
+    "charge": -0.222,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "C2",
+    "type": "CG3C52",
+    "charge": -0.085,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "C3",
+    "type": "CG2RC0",
+    "charge": 0.061,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "C4",
+    "type": "CG2R61",
+    "charge": -0.236,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "C5",
+    "type": "CG2R61",
+    "charge": -0.155,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "C6",
+    "type": "CG2R61",
+    "charge": -0.155,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "C7",
+    "type": "CG2R61",
+    "charge": -0.236,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "C8",
+    "type": "CG2RC0",
+    "charge": 0.061,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "C9",
+    "type": "CG3C52",
+    "charge": -0.085,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H1",
+    "type": "HGA2",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H2",
+    "type": "HGA2",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H3",
+    "type": "HGA2",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H4",
+    "type": "HGA2",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H5",
+    "type": "HGR61",
+    "charge": 0.122,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H6",
+    "type": "HGR61",
+    "charge": 0.134,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H7",
+    "type": "HGR61",
+    "charge": 0.134,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H8",
+    "type": "HGR61",
+    "charge": 0.122,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H9",
+    "type": "HGA2",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   },
+   {
+    "name": "H10",
+    "type": "HGA2",
+    "charge": 0.09,
+    "charge_penalty": 0.0
+   }
+  ],
+  "bonds": [
+   [
+    "C1",
+    "C2"
+   ],
+   [
+    "C2",
+    "C3"
+   ],
+   [
+    "C3",
+    "C4"
+   ],
+   [
+    "C4",
+    "C5"
+   ],
+   [
+    "C5",
+    "C6"
+   ],
+   [
+    "C6",
+    "C7"
+   ],
+   [
+    "C7",
+    "C8"
+   ],
+   [
+    "C3",
+    "C8"
+   ],
+   [
+    "C8",
+    "C9"
+   ],
+   [
+    "C1",
+    "C9"
+   ],
+   [
+    "C1",
+    "H1"
+   ],
+   [
+    "C1",
+    "H2"
+   ],
+   [
+    "C2",
+    "H3"
+   ],
+   [
+    "C2",
+    "H4"
+   ],
+   [
+    "C4",
+    "H5"
+   ],
+   [
+    "C5",
+    "H6"
+   ],
+   [
+    "C6",
+    "H7"
+   ],
+   [
+    "C7",
+    "H8"
+   ],
+   [
+    "C9",
+    "H9"
+   ],
+   [
+    "C9",
+    "H10"
+   ]
+  ],
+  "analog_parameters": [],
+  "note": "Exact program v5.0 output transcribed from the SI; parameters listed without \"from\" are exact matches in CGenFF v5.0."
+ }
+]
