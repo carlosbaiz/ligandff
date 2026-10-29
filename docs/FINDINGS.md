@@ -125,3 +125,41 @@ Production perception (`src/open_cgenff/perception/`) on the P-I material and th
   a pilot rule relied on RDKit moving the amidinium charge through non-aromatic conjugation. Remaining B2-train
   differences come from B2 inputs whose RDKit bond orders are unusual (PNTM gets an `[O+]=` oxonium, SM033 an azide
   form): see `benchmarks/b2_rtf_legacy.NOTES.md`.
+
+## 7. Typing rules (M3)
+Production typer = P-I rule language (`src/open_cgenff/typing/`) + rule file v1 (`typing/rules/cgenff_v5.rules`).
+Only B1-train/B2-train failures were inspected; test splits are aggregates.
+- Port: the pilot rewritten in the rule language reproduces the pilot on production perception atom for atom on
+  B1/B2-train (873/627), after one interpretation was fixed: nested `ne` must not revisit the atom it came from.
+  P-I's printed `NG2R62` rule (`ne ( inring arom 6 or ( el N ) ( ne ( inring el N arom 6 ) ) )`) only works that way,
+  so predicates written "from the other side" (amidinium C seen from its N; nitro O seeing its N) were rewritten.
+- P-I's `NG2R62` (another ring N ortho/meta in the same aromatic 6-ring) beats the pilot's broader rule (any aromatic
+  heteroatom within two bonds): +2 B1-train, +3 B1-test, +1 B2-train, nothing lost.
+- Conventions learned on B2-train (counts = train molecules/atoms with the pattern):
+  H on an aromatic C next to a C–halogen is HGR62 (50/50 atoms, 24 halobenzenes); sulfate/sulfonate S is SG3O1 only
+  with an O− (neutral sulfonic acids and esters SG3O2); thio/dithio-phosphate S is SG2P1/SG2P2 and the terminal O on
+  such a P is OG2S1; N–P and N–SO3− are NG2S3 with HGP1; methylamine/dimethylamine/trimethylamine methyls are
+  CG3AM2/1/0 with HGAAM*; CH3 on any N+ incl. N-oxides and nitro is CG334; N-oxide O− is OG312 (nitro O stays OG2N1);
+  boronate O− is OG2D2; imidazolium C2-H is HGR53 (also in imidazolinium); H on C=N+ and on formate is HGR52;
+  N-aryl on an aromatic 6-ring N is CG2R67 like biaryls; azide N1/N2 are NG1T1; isocyanate C is CG2O7; carbonate C
+  CG2O6; beta-lactone carbonyl CG2O4 (4-ring CG2R53 needs N); conjugation for CG2DC* counts C=X but not C≡X; an
+  amidinium inside an aromatic 6-ring (protonated cytosines: ring N next to a C with an exocyclic N–H, system
+  cationic) gives NG2P1 ring/exocyclic N, CG2R64 carbons and a ring that is *not* cationic for CG2R62/HGR63;
+  pyrimidinium C2 (cationic ring, between two N) is CG2R62, not CG2R64; imidates `N=C–O−` are typed as amides
+  (CG2O1/OG2D1); C=Se is treated like C=O (CG2R63).
+- B1-train: 7-ring sp2 carbons are CG2R71 (incl. C=O) and 7/5 fusion carbons CG2RC7 only when the 7-ring is aromatic
+  and fused to a planar 5-ring (azulene-like; benzodiazepine-like 5/7 fusions keep CG2R5x); a 5-ring N bonded to an
+  aromatic 5-ring is NG2R57 whatever its own ring class (lactam N, indoline N); 2-fluoropyrimidine C is CG2R64 (N wins
+  over F); exocyclic C=N on a 5-ring C is CG25C1 (the double-bond partner does not count as a heteroatom); isourea and
+  isothiourea C are CG2N2.
+- Remaining B1-train failures (9): 2300J3, 2300PE, 23008L, 2300VB, 230073 have input structures from the radical
+  repair or zwitterionic SMILES that P-I takes literally (FINDINGS §6); 23001K, 23002G, 2300RO are exocyclic-double-
+  bond conventions with one example each and conflicting neighbours; 2300CY (7-ring fused to pyrazole typed
+  azulene-like although not aromatic by P-I counting). B2-train (8): PNTM, B1MA, PEGM, SM212 input artifacts; small
+  S–O/S–S molecules SM006, SM053, SM055, SM152.
+- Formal charges (SPEC 5.7, set QF): with the rule charges, 887/888 B1-train, 218/218 B1-test, 669/670 B2-train and
+  166/166 B2-test molecules (complete increments, no lone pairs, types correct) have exactly round(q_ref − q_incr).
+  Exceptions: 23012O (C=O carbon −1, O +1: a dipole the increments do not capture) and C34H.
+- B2 input fix: DetermineBondOrders produced charge-separated structures for 14 residues (thioesters as `[S+]=C–[O−]`,
+  2-alkylthio-pyrimidinones, a thiosulfate, a thiophosphate). `b2.py` now flips alternating paths between a +1 atom
+  and a −1 atom. Pilot baseline on the rebuilt B2: 633/728 train, 161/182 test (was 625/158).

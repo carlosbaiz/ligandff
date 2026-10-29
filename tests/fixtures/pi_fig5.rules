@@ -1,0 +1,80 @@
+# Rules printed in P-I Fig. 5 (docs/SPEC.md Appendix A), verbatim. The figure omits parts ("..."); the minimal
+# fallback rules marked "# fill" are not from the paper and only make the file complete enough to run.
+cat main
+sub HG    : el H
+sub CG    : el C
+sub NG    : el N
+typ XX    :                                                     # fill
+
+cat HG
+typ HGX   :                                                     # fill
+
+cat CG
+sub CG2   : ne ( bo 2 )
+typ CGX   :                                                     # fill
+
+cat CG2
+typ CG2O7  : ne ( bo 2 el O ) ( bo 2 el O )
+sub CG2__  : arom 6 arom 6
+sub CG267  : arom 6 ne ( inring arom 6 ) ( inring arom 6 ) ( arom 6 )
+sub CG2_   :
+end
+
+cat CG267
+typ CG2R67 :                                                    # fill
+
+cat CG2_
+sub CG2__  : ! ( arom 7 ) ! ( arom 6 ) ! ( ring 5 ) ne ( or ( el N ) ( elos ) ) impr
+sub CG2__  : ne ( ! ( inring ) bo 2 el N ) impr
+sub CG2__  : ne ( bo 2 el N ) ( ! ( inring ) bo 1 el N ) impr
+sub CG2__  :
+end
+
+cat CG2__
+typ CG2R61 : arom 6                                             # fill
+typ CG2R71 : arom 7
+sub CG2O   : ne ( bo 2 elos )
+sub CG2D   : ne ( bo 2 el N nb 4 ) charge 1
+sub CG2D   : ne ( bo 1 elos nb 1 ) warn "enolate"
+sub CG2D   :
+
+cat CG2O
+typ CG2OX  :                                                    # fill
+
+cat CG2D
+typ CG2DC3 : ne ( el H ) ( el H ) ( ne ( ! ( el H ) bo 1 ne ( bo 2 ) ) )
+typ CG2D?O : ne ( bo 1 or ( el N ) ( elos ) ) altnum
+typ CG2DC? : ne ( ! ( el H ) bo 1 ne ( bo 2 ) ) altnum
+typ CG2DC? : ne ( bo 2 ne ( ! ( el H ) bo 1 ne ( bo 2 ) ) ) altnum
+typ CG2D2  : ne ( el H ) ( el H )
+typ CG2D1  :
+
+cat NG
+typ NG331  : nb 0 err "atomic nitrogen"
+typ NG1T1  : nb 1 err "monovalent nitrogen"
+sub NG_    : ne ( elha ) warn "N-halogen bond"
+sub NG_    :
+end
+
+cat NG_
+sub NG_2   : ne ( bo 2 )
+sub NG_3P  : nb 4 charge 1
+typ NGX    :                                                    # fill
+
+cat NG_2
+sub NG2R5  : or (arom 5) (ring2 5) (ring23 5)
+typ NG2R61 : arom 6 ne ( bo 1 ) ( bo 1 ) charge 1
+typ NG2R62 : arom 6 ne ( inring arom 6 or ( el N ) ( ne ( inring el N arom 6 ) ) )
+typ NG2R60 : arom 6                                             # fill
+typ NG2D1  :                                                    # fill
+
+cat NG2R5
+typ NG2R5X :                                                    # fill
+
+cat NG_3P
+typ NG3P3  : ne ( el H ) ( el H ) ( el H ) ( el H ) err "ammonium ion"
+typ NG3P3  : ne ( el H ) ( el H ) ( el H )
+typ NG3P2  : ne ( el H ) ( el H )
+typ NG3P1  : ne ( el H )
+typ NG3P0  :
+end

@@ -18,5 +18,8 @@ open-cgenff-bench = "open_cgenff.benchmarks.runner:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+"open_cgenff.typing" = ["rules/*.rules"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

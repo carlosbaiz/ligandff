@@ -53,6 +53,11 @@ def test_runner_meets_floors(report):
     assert report['B3']['typing']['dev']['molecule_accuracy'] == 1.0
 
 
+def test_floors_beat_pilot():
+    for key, floor in floors.TYPING_FLOORS.items():
+        assert floor >= floors.PILOT_BASELINE[key]
+
+
 def test_runner_hides_sealed_split_details(report):
     test = report['B1']['typing']['test']
     assert 'confusions' not in test and 'failures' not in test
@@ -61,8 +66,8 @@ def test_runner_hides_sealed_split_details(report):
 
 
 def test_floor_check_detects_regression():
-    bad = {'B1': {'typing': {'train': {'molecules_correct': 873, 'molecules': 904},
-                             'test': {'molecules_correct': 212, 'molecules': 226}}},
+    bad = {'B1': {'typing': {'train': {'molecules_correct': 894, 'molecules': 904},
+                             'test': {'molecules_correct': 220, 'molecules': 226}}},
            'B0': {'exact': 2, 'molecules': 3}}
     assert len(floors.check(bad)) == 2
 

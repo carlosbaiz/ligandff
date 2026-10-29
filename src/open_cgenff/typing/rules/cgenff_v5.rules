@@ -1,0 +1,375 @@
+# CGenFF-compatible typing rules, v1 (SPEC 5.5-5.7). Not the official CGenFF rule file (unpublished); reconstructed
+# from P-I (Fig. 5, Appendix A of docs/SPEC.md), the RTF MASS-line type descriptions, the pilot typer
+# (prototype/typer_pilot.py) and the train splits of B1/B2. Every change is logged in docs/RULES_CHANGELOG.md.
+# Language: src/open_cgenff/typing/rules.py. First matching rule wins: keep specific rules first.
+
+# ---------------------------------------------------------------- macros (shared predicates)
+def het      ( or ( el N ) ( el O ) ( el S ) ( el P ) )
+def heavy    ( ! ( el H ) )
+def nitro    ( el N ne ( el O ) ( el O ) )                       # nitro / N-oxide-like N: >= 2 O neighbours
+def cation   ( fc 1 ! ( ne ( fc -1 ) ) )                         # positive atom that is not half of a zwitterion pair
+def catring  ( or ( rmember arom ( @cation ) ) ( rmember ring2 ( @cation ) ) )
+def carbonyl ( el C ne ( bo 2 elos ) )                           # C=O / C=S carbon (ring or not)
+# amidinium carbon, seen from one of its N (that N is not revisited): another N is =N+, or this N is =N and another
+# N is positive, or another =N and a positive N
+def amidC    ( el C or ( ne ( bo 2 el N fc 1 ! ( @nitro ) ) )
+                     ( ! ( arom ) bo 2 ne ( el N fc 1 ! ( @nitro ) ) )
+                     ( ! ( arom ) ne ( bo 2 el N ! ( @nitro ) ) ( el N fc 1 ! ( @nitro ) ) ) )
+def posN     ( el N or ( fc 1 ) ( @catring ) ( ne ( @amidC ) ) )
+def small    ( or ( ring 3 ) ( ring 4 ) ( ring 5 ) )
+# C carrying an exocyclic N-H (amidinium/guanidinium carbon inside an aromatic ring, e.g. protonated cytosines)
+def exoNHC   ( el C ne ( ! ( inring ) el N ! ( nh 0 ) ) )
+# ring cation that makes a 6-ring "cationic" (CG2R62, HGR63): not when it belongs to such an amidinium
+def ringcat  ( @cation ! ( ne ( @exoNHC ) ) )
+def posNt    ( or ( @posN ) ( el N type NG2P1 ) )                # posN incl. amidinium-type ring N (not inside N rules)
+def planar5  ( or ( arom 5 ) ( ring2 5 ) )
+
+# ---------------------------------------------------------------- dispatch by element (P-I Fig. 5)
+cat main
+sub HG    : el H
+sub CG    : el C
+sub NG    : el N
+sub OG    : el O
+sub SG    : el S
+sub PG    : el P
+sub XG    : elha
+typ BG201 : el B
+typ SEGD1 : el Se
+typ ALG1  : el Al charge -1                                      # AlF4-
+end
+
+# ---------------------------------------------------------------- carbon
+cat CG
+sub CG1   : ne ( bo 3 )
+typ CG2RC7 : ne ( bo 2 ) @planar5 arom 7                         # aromatic 7-ring fused to a planar 5-ring (azulene)
+typ CG2R71 : ne ( bo 2 ) rmember arom 7 ( @planar5 arom 7 )      # incl. its C=O carbon (23001Q)
+sub CGO   : ne ( bo 2 or ( elos ) ( el Se ) ! ( inring ) )      # carbonyl / thiocarbonyl / selone (exocyclic)
+sub CG2   : ne ( bo 2 )
+typ CG2RC0 : or ( arom 5 ) ( arom 6 )                           # aromatic C whose Kekule double bond is elsewhere
+sub CG3   :
+end
+
+cat CG1
+typ CG1N1 : ne ( bo 3 el N )
+typ CG1T2 : ne ( el H )
+typ CG1T1 :
+end
+
+cat CGO
+typ CG2O7  : ne ( bo 2 el O ) ( bo 2 )                         # CO2, isocyanate
+typ CG2R63 : arom 6
+typ CG2R53 : ne ( or ( el N ) ( elos ) inring 5 )              # 5-ring lactone/lactam
+typ CG2R53 : ne ( el N inring 4 )                              # 4-ring lactam (beta-lactone stays CG2O4)
+typ CG2O4  : ring 4 ne ( bo 2 el O )                            # cyclobutanone
+typ CG2O6  : ne ( bo 1 el O nb 1 ) ( bo 1 el O nb 1 ) charge -2  # carbonate dianion
+typ CG2O6  : ne ( bo 1 el O ) ( bo 1 el O )                    # carbonate
+typ CG2O3  : ne ( bo 1 el O nb 1 ) charge -1                    # carboxylate (charge on C, SPEC 5.7)
+typ CG2O6  : ne ( bo 1 or ( el N ) ( elos ) ) ( bo 1 or ( el N ) ( elos ) )
+typ CG2O1  : ne ( bo 1 el N )
+typ CG2O2  : ne ( bo 1 elos )
+typ CG2O4  : ne ( el H )
+typ CG2O5  :
+end
+
+cat CG2
+sub CG2R6  : arom 6
+typ CG2RC0 : ne ( bo 2 inring 4 ) ring 4
+sub CG2R5  : or ( @planar5 ) ( ne ( bo 2 inring 5 ) )
+typ CG2R71 : arom 7
+typ CG2O1  : ne ( bo 2 el N ) ( bo 1 el O nb 1 )               # imidate anion, typed as amide (ABMB)
+typ CG2N1  : ne ( bo 2 el N ! ( @nitro ) ) ( el N ! ( @nitro ) ) ( el N ! ( @nitro ) ) ne ( el N fc 1 ) charge 1
+typ CG2N1  : ne ( bo 2 el N ! ( @nitro ) ) ( el N ! ( @nitro ) ) ( el N ! ( @nitro ) )
+typ CG2N2  : ne ( bo 2 el N ! ( @nitro ) ) ( el N ! ( @nitro ) ) ne ( el N fc 1 ! ( @nitro ) ) charge 1
+typ CG2N2  : ne ( bo 2 el N ! ( @nitro ) ) ( @posN )                    # conjugated with an amidinium (2300CU)
+typ CG2N2  : ne ( bo 2 el N ! ( @nitro ) ) ( el N ! ( @nitro ) ) ( elos )   # isothiourea (23002W, DH3T), isourea (2300CK)
+typ CG2N2  : ne ( bo 2 el N ! ( @nitro ) ) ( el N ! ( @nitro ) ) ne ( el C ne ( bo 2 el N fc 1 ) )   # amidine on an amidinium C (23003U)
+sub CG25X  : ring 5 ne ( bo 2 ! ( inring ) )                    # exocyclic C=X on a 5-ring carbon
+sub CG2D   : ne ( bo 2 el N nb 4 ) charge 1                     # iminium C (P-I Fig. 5), SCH2
+sub CG2D   :
+end
+
+cat CG2D
+sub CG2DCJ : or ( ne ( @heavy bo 1 ne ( bo 2 ) ) ) ( ne ( bo 2 ne ( @heavy bo 1 ne ( bo 2 ) ) ) )   # conjugated with C=X (not C#X: BEYN)
+sub CG2DCJ : or ( ne ( bo 1 el N ne ( @amidC ) ) ) ( ne ( bo 2 ne ( bo 1 el N ne ( @amidC ) ) ) )      # or with an amidinium N (230003)
+typ CG2D?O : ne ( bo 1 @het ) altnum
+typ CG2D2  : nh 2
+typ CG2D1  :
+end
+
+cat CG2DCJ                                                      # conjugated C=C / C=N
+typ CG2DC3 : nh 2
+typ CG2D?O : ne ( bo 1 @het ) altnum
+typ CG2DC? : altnum
+end
+
+cat CG25X
+typ CG25?O : ne ( bo 1 @het ) altnum                            # exocyclic C=N alone is CG25C? (2300YW)
+typ CG25C? : altnum
+end
+
+cat CG2R6                                                       # aromatic 6-ring carbon
+typ CG2R67 : ne ( bo 1 arom 6 ! ( inring arom 6 ) )             # biaryl C, also N-aryl (FINDINGS 3.3)
+typ CG2R64 : ne ( bo 2 ! ( inring ) el N nb 4 ) charge 1       # ring C of an exocyclic amidinium (2300YF)
+typ CG2R64 : ne ( el N ! ( @nitro ) ) ( el N ! ( @nitro ) ) ne ( el F )   # 2-fluoropyrimidine (2300L4)
+typ CG2R66 : ne ( el F )
+typ CG2RC0 : or ( ring 5 ) ( ring 4 )
+typ CG2R62 : rmember arom 6 ( @ringcat )                        # cationic ring, incl. pyrimidinium C2 (PYRH)
+typ CG2R64 : ne ( el N ! ( @nitro ) ) ( el N ! ( @nitro ) )
+typ CG2R62 : rmember arom 6 ( @carbonyl )
+typ CG2R61 :
+end
+
+cat CG2R5                                                       # sp2 carbon of a planar 5-ring, or C=X inside a 5-ring
+typ CG25?O : ne ( bo 2 el C ! ( inring 5 ) ! ( arom ) ) ! ( ne ( bo 2 inring 5 ) ) ne ( @het ) altnum   # also on a P-I-aromatic 5-ring (23006I)
+typ CG25C? : ne ( bo 2 el C ! ( inring 5 ) ! ( arom ) ) ! ( ne ( bo 2 inring 5 ) ) altnum
+typ CG2R57 : ne ( @heavy bo 1 ! ( inring 5 ) ring 5 ! ( ring 3 ) ! ( ring 4 ) )   # bond may close a 6-ring (2300P5)
+typ CG2R53 : ne ( bo 2 el N nb 4 ) ( @heavy @het ) charge 1      # imidazolium C2 (SPEC 5.7)
+typ CG2R53 : ne ( bo 2 el N ) ( @heavy @het )
+typ CG2R52 : ne ( bo 2 el N nb 4 ) charge 1                     # protonated 5-ring imine (2HPP)
+typ CG2R52 : ne ( bo 2 el N )
+typ CG2R51 :
+end
+
+cat CG3                                                         # sp3 carbon
+typ CG3RC1 : fusion @small
+typ CG3C31 : ring 3
+typ CG3C41 : ring 4
+sub CG3C5  : ring 5
+typ CG302  : ne ( el F ) ( el F ) ( el F )
+typ CG312  : ne ( el F ) ( el F )
+typ CG322  : ne ( el F )
+typ CG3AM2 : nh 3 ne ( el N fc 0 nh 2 deg 3 )                   # methylamine
+typ CG3AM1 : nh 3 ne ( el N fc 0 nh 1 deg 3 ne ( el C nh 3 ) )   # dimethylamine
+typ CG3AM0 : nh 3 ne ( el N fc 0 nh 0 deg 3 ne ( el C nh 3 ) ( el C nh 3 ) )   # trimethylamine
+typ CG323  : or ( nh 2 ) ( nh 3 ) ne ( el S fc -1 )             # thiolate carbon
+typ CG301  : nh 0
+typ CG314  : nh 1 ne ( @posNt )
+typ CG311  : nh 1
+typ CG324  : nh 2 ne ( @posNt )
+typ CG321  : nh 2
+typ CG334  : ne ( @posNt )
+typ CG331  :
+end
+
+cat CG3C5
+typ CG3C50 : nh 0
+typ CG3C53 : nh 1 ne ( @posNt )
+typ CG3C51 : nh 1
+typ CG3C54 : ne ( @posNt )
+typ CG3C52 :
+end
+
+# ---------------------------------------------------------------- nitrogen
+cat NG
+typ NG1T1  : ne ( bo 3 )
+typ NG1T1  : ne ( bo 2 el N ne ( bo 2 el N ) )                 # azide N1 (N=N+=N-)
+typ NG1T1  : ne ( bo 2 el N ) ( bo 2 el N )                    # azide N2
+typ NG2O1  : @nitro
+sub NG3P   : fc 1 nb 4 ! ( ne ( bo 2 ) ) ! ( arom )              # ammonium (P-I: sub NG_3P : nb 4 charge 1)
+typ NG2R57 : ring 5 ! ( ne ( bo 2 ) ) ne ( ! ( inring ) arom 5 ) # 5-ring N on an aromatic 5-ring, any ring class (2300J6, 23012A)
+sub NG2R5  : @planar5 ! ( arom 6 )
+sub NG2R6  : arom 6
+sub NG2D   : ne ( bo 2 )
+typ NG2R52 : ring 5 ne ( @amidC )
+typ NG2P1  : ne ( @amidC )
+typ NG2P1  : ! ( ring ) ! ( nh 0 ) ne ( el C arom 6 ne ( inring el N fc 1 ) )   # exocyclic N-H of such a ring amidinium
+sub NGAM   : ne ( @carbonyl )
+typ NG2S3  : ne ( el P )                                       # phosphoramidate
+typ NG2S3  : ne ( el S ne ( el O nb 1 ) )                      # sulfamate (2300NR, NMSM)
+typ NG2S3  : nh 2 deg 3 ne ( arom 6 )
+typ NG3C51 : ring 5
+typ NG3N1  : ne ( el N )
+typ NG301  : nh 0
+typ NG311  : nh 1
+typ NG321  : nh 2
+typ NG331  :
+end
+
+cat NG3P
+typ NG3P3 : or ( nh 3 ) ( nh 4 ) charge 1
+typ NG3P2 : nh 2 charge 1
+typ NG3P1 : nh 1 charge 1
+typ NG3P0 : charge 1
+end
+
+cat NG2R5
+typ NG2R52 : or ( rmember arom 5 ( @cation ) ) ( rmember ring2 5 ( @cation ) ) or ( fc 1 ) ( ! ( ne ( bo 2 ) ) )
+typ NG2R50 : ne ( bo 2 )
+typ NG2R57 : ne ( ! ( inring ) arom 5 )
+typ NG2R51 :
+end
+
+cat NG2R6
+typ NG2RC0 : fc 1 @planar5 charge 1
+typ NG2RC0 : @planar5
+typ NG2R62 : ne ( bo 2 ) ! ( fc 1 ) ne ( inring arom 6 or ( el N ) ( ne ( inring el N arom 6 ) ) )   # P-I Fig. 5
+typ NG2R60 : ne ( bo 2 ) ! ( fc 1 )
+typ NG2R67 : fc 1 ne ( ! ( inring ) arom 6 ) charge 1          # N-aryl pyridinium (230045)
+typ NG2R67 : ne ( ! ( inring ) arom 6 )
+typ NG2P1  : ! ( ne ( bo 2 ) ) ne ( @exoNHC ne ( el N fc 1 ) )   # amidinium/guanidinium N in an aromatic ring (B3MC, NCYP)
+typ NG2P1  : fc 1 ne ( @exoNHC )
+typ NG2R61 : fc 1 charge 1                                      # pyridinium-type N (SPEC 5.7)
+typ NG2R61 :
+end
+
+cat NG2D
+typ NG2R52 : ring 5 @posN ne ( bo 2 inring 5 )                # (exocyclic C=N+: NG2P1, 2300YF)
+typ NG2P1  : @posN
+typ NG2R50 : ne ( bo 2 inring 5 )
+typ NG2D1  :
+end
+
+cat NGAM                                                        # amide-type N
+typ NG2R43 : ne ( inring 4 @carbonyl )
+typ NG2R53 : ne ( inring 5 @carbonyl )
+typ NG2S0  : nh 0
+typ NG2S1  : nh 1
+typ NG2S2  :
+end
+
+# ---------------------------------------------------------------- oxygen
+cat OG
+typ OGTIP3 : ! ( ne ( @heavy ) )
+sub OGD    : or ( ne ( bo 2 ) ) ( deg 1 fc -1 )                  # carbonyl-type or terminal O-
+typ OG311  : ! ( ne ( @heavy ) ( @heavy ) )
+typ OG2R50 : arom 5
+typ OG3C31 : ring 3
+typ OG3C51 : or ( ring 5 ) ( ring 4 )
+sub OG30   : ne ( or ( el P ) ( el S ) )
+typ OG3R60 : ring 6 ne ( @carbonyl )
+typ OG302  : ne ( @carbonyl )
+typ OG3R60 : ring 6 ne ( or ( ne ( bo 2 ) ) ( arom ) )
+typ OG3C61 : ring 6
+typ OG301  :
+end
+
+cat OG30
+typ OG304 : ne ( or ( el P ) ( el S ) ) ( or ( el P ) ( el S ) )
+typ OG303 :
+end
+
+cat OGD
+sub OGDC  : ne ( el C )
+typ OG2N1 : ne ( el N or ( ne ( el O ) ) ( bo 2 ) )                # nitro (the other O), nitroso
+typ OG312 : ne ( el N ) charge -1                               # N-oxide O- (TMAO)
+typ OG2D2 : ne ( el B ) charge -1                               # boronate O-
+typ OG2S1 : ne ( el P ne ( el S ) )                             # thiophosphate O
+typ OG2P1 : ne ( or ( el P ) ( el S ) )
+typ OG2D1 :
+end
+
+cat OGDC                                                        # O on carbon: by the carbon's type
+typ OG2D3 : ne ( type CG2O4 nh 0 ! ( ne ( bo 1 @het ) ) )      # cyclobutanone (not beta-lactone, 2OXT)
+typ OG2D2 : ne ( or ( type CG2O3 ) ( type CG2O6 ne ( el O nb 1 ) ) )   # carboxylate, carbonate
+typ OG2D3 : ne ( or ( type CG2O5 ) ( type CG2R71 ) )                  # ketone, tropone (23001Q)
+typ OG2D4 : ne ( type CG2R63 )
+typ OG2D5 : ne ( type CG2O7 )
+typ OG2D1 : ne ( or ( type CG2R53 ) ( type CG2O1 ) )
+typ OG2D1 : ne ( bo 2 )
+typ OG312 : charge -1                                           # alkoxide / phenoxide / enolate
+end
+
+# ---------------------------------------------------------------- sulfur, phosphorus, halogens
+cat SG
+typ SG2R50 : arom 5
+typ SG2P2  : ne ( el P ne ( el S ) )                            # dithiophosphate S
+typ SG2P1  : ne ( el P )                                        # monothiophosphate S
+typ SG3O1  : ne ( el O ) ( el O ) ( el O ) ne ( el O nb 1 ) charge -1   # sulfate / sulfonate anion
+typ SG3O2  : ne ( el O ) ( el O )
+typ SG3O3  : ne ( el O ) ( @heavy ) ( @heavy )
+typ SG2D1  : ne ( bo 2 el C )
+typ SG302  : fc -1 charge -1
+typ SG301  : ne ( or ( el S ) ( el O ) )
+typ SG311  :
+end
+
+cat PG
+typ PG2 : ne ( fc -1 ) ( fc -1 ) charge -2
+typ PG1 : ne ( fc -1 ) charge -1
+typ PG0 :
+end
+
+cat XG
+typ FGP1 : ne ( el Al )
+sub XGR  : ne ( arom )
+sub FGA  : el F
+sub CLGA : el Cl
+sub BRGA : el Br
+typ IGR1 :
+end
+
+cat XGR
+typ FGR1  : el F
+typ CLGR1 : el Cl
+typ BRGR1 : el Br
+typ IGR1  :
+end
+
+cat FGA                                                         # by the number of F on the carbon (self included)
+typ FGA3 : ne ( ne ( el F ) ( el F ) )
+typ FGA2 : ne ( ne ( el F ) )
+typ FGA1 :
+end
+
+cat CLGA
+typ CLGA3 : ne ( ne ( el Cl ) ( el Cl ) )
+typ CLGA1 :
+end
+
+cat BRGA
+typ BRGA3 : ne ( ne ( el Br ) ( el Br ) )
+typ BRGA2 : ne ( ne ( el Br ) )
+typ BRGA1 :
+end
+
+# ---------------------------------------------------------------- hydrogen (by the parent's type)
+cat HG
+sub HGC  : ne ( el C )
+sub HGN  : ne ( el N )
+typ HGP3 : ne ( el S )
+typ HGP1 :
+end
+
+cat HGC
+sub HGR6   : ne ( or ( type CG2R6* ) ( type CG2RC0 arom 6 ) )
+typ HGA4   : ne ( type CG2RC0 ring 4 ! ( arom ) )
+sub HGR5   : ne ( or ( type CG2R5* ) ( type CG2RC0 ) )
+typ HGR71  : ne ( type CG2R7* )
+typ HGR52  : ne ( or ( type CG2O4 ) ( type CG2O1 ) ( type CG2O3 ) ( ne ( bo 2 el N fc 1 ) ) )   # aldehyde, formamide, formate, C=N+
+typ HGPAM1 : ne ( type CG1T2 )
+typ HGAAM2 : ne ( type CG3AM2 )
+typ HGAAM1 : ne ( type CG3AM1 )
+typ HGAAM0 : ne ( type CG3AM0 )
+typ HGA5   : ne ( type CG2* nh 2 )
+typ HGA4   : ne ( type CG2* )
+typ HGP5   : ne ( ne ( el N type NG3P0 ) )
+typ HGA7   : ne ( ne ( el F ) ( el F ) ! ( ne ( el F ) ( el F ) ( el F ) ) )
+typ HGA6   : ne ( ne ( el F ) ! ( ne ( el F ) ( el F ) ) )
+typ HGA1   : ne ( nh 1 )
+typ HGA2   : ne ( nh 2 )
+typ HGA3   :
+end
+
+cat HGR6
+typ HGR63 : ne ( rmember arom 6 ( @ringcat ) )
+typ HGR62 : ne ( or ( type CG2R62 ) ( type CG2R64 ) )
+typ HGR62 : ne ( ne ( or ( @het ) ( el C ne ( elha ) ) ) )                # next to N/O/S/P or to a C-halogen
+typ HGR61 :
+end
+
+cat HGR5
+typ HGR53 : ne ( ne ( el N ) ( el N ) rmember ring 5 ( @cation ) )              # imidazolium C2-H
+typ HGR52 : ne ( or ( ne ( @het ) ) ( rmember arom 5 ( @cation ) ) ( rmember ring2 5 ( @cation ) ) )
+typ HGR51 :
+end
+
+cat HGN
+typ HGP2   : ne ( or ( @posNt ) ( fc 1 ) )
+typ HGP1   : ne ( ne ( or ( el P ) ( el S ) ) )               # phosphoramidate, sulfamate N-H
+typ HGP4   : ne ( type NG2S3 )
+typ HGP1   : ne ( ne ( or ( el S ) ( el O ) ( el N ) ) )
+typ HGPAM1 : ne ( type NG311 )
+typ HGPAM2 : ne ( type NG321 )
+typ HGPAM3 : ne ( type NG331 )
+typ HGP1   :
+end

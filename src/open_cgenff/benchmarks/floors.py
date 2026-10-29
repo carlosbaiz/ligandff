@@ -1,13 +1,31 @@
-"""Regression floors (SPEC 7.4): the frozen pilot's results. CI fails if a run falls below any of them.
-Typing floors are exact molecule counts: 874/904 = 96.68 % (printed as 96.7 % in the spec), 212/226 = 93.81 %."""
+"""Regression floors (SPEC 7.4). CI fails if a run falls below any of them.
+
+PILOT_BASELINE is the frozen pilot (prototype/typer_pilot.py); production must beat it. TYPING_FLOORS ratchet to the
+production typer's results at the end of M3, so any regression fails CI; lower one only with an explanation logged
+in docs/RULES_CHANGELOG.md. Floors are exact molecule counts."""
 from fractions import Fraction
 
-TYPING_FLOORS = {  # (set, split) -> minimum fraction of molecules with all atoms typed correctly
+PILOT_BASELINE = {  # pilot on its own perception; B2 as rebuilt in M3 (charge-separation fix, b2.py)
     ("B1", "train"): Fraction(874, 904),
     ("B1", "test"): Fraction(212, 226),
-    ("B2", "train"): Fraction(625, 728),        # pilot baseline on B2 (built in M2)
-    ("B2", "test"): Fraction(158, 182),
+    ("B2", "train"): Fraction(633, 728),
+    ("B2", "test"): Fraction(161, 182),
     ("B3", "dev"): Fraction(1),
+}
+
+TYPING_FLOORS = {  # (set, split) -> minimum fraction of molecules with all atoms typed correctly (M3 production)
+    ("B1", "train"): Fraction(895, 904),
+    ("B1", "test"): Fraction(220, 226),
+    ("B2", "train"): Fraction(720, 728),
+    ("B2", "test"): Fraction(178, 182),
+    ("B3", "dev"): Fraction(1),
+}
+
+FORMAL_CHARGE_FLOORS = {  # QF: (set, split) -> minimum number of molecules with all rule formal charges correct
+    ("B1", "train"): 887,
+    ("B1", "test"): 218,
+    ("B2", "train"): 669,
+    ("B2", "test"): 166,
 }
 
 # QT: the increment model's fit to the training charges (FINDINGS 2.2); a change means the engine or the data changed
@@ -25,6 +43,13 @@ def check(report):
                            or round(qt["median_rmse"], 4) != CHARGE_TRAINING["median_rmse"]):
         problems.append(f"QT: {qt['residues']} residues, median RMSE {qt['median_rmse']:.4f} e "
                         f"(expected {CHARGE_TRAINING['residues']}, {CHARGE_TRAINING['median_rmse']})")
+    qf = report.get("QF")
+    if qf is not None:
+        for (name, split), floor in FORMAL_CHARGE_FLOORS.items():
+            m = qf.get(name, {}).get("splits", {}).get(split)
+            if m is None or m["correct"] < floor:
+                problems.append(f"QF-{name}-{split}: {m and m['correct']} molecules with correct formal charges "
+                                f"(floor {floor})")
     for (name, split), floor in TYPING_FLOORS.items():
         m = report.get(name, {}).get("typing", {}).get(split)
         if m is None:

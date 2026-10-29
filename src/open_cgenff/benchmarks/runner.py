@@ -1,7 +1,8 @@
 """Benchmark runner: scores typing and charges on B0/B1/B2/B3 and writes JSON + markdown reports (SPEC 7.3).
-Set QT is the charge formula check on the training residues (FINDINGS 2.2).
+Set QT is the charge formula check on the training residues (FINDINGS 2.2); set QF checks the production typing-rule
+formal charges against the charges implied by the B1/B2 reference residues (SPEC 5.7).
 
-usage: python -m open_cgenff.benchmarks [--sets B0,B1,B2,B3,QT] [--typer FILE] [--charge-engine FILE]
+usage: python -m open_cgenff.benchmarks [--sets B0,B1,B2,B3,QT,QF] [--typer FILE] [--charge-engine FILE]
                                         [--toppar DIR] [--out DIR] [--check-floors]
 Hygiene (SPEC 7.2): confusion pairs and per-molecule failures are reported for development splits only.
 """
@@ -15,13 +16,29 @@ from pathlib import Path
 from .. import banner
 from ..charges import IncrementTable, assign_charges, training_check
 from ..paths import REPO_ROOT, TOPOLOGY_FILE, INCREMENTS_FILE, toppar_dir
-from . import b0, b1, b2, b3, floors
+from . import b0, b1, b2, b3, floors, qf
 from .common import load_typer
 from .scoring import score_typing
 
-DEFAULT_TYPER = REPO_ROOT / "prototype" / "typer_pilot.py"            # until the production typer exists (M3)
-DEFAULT_SETS = ("B0", "B1", "B2", "B3", "QT")
+PRODUCTION_TYPER = "open_cgenff.typing"
+DEFAULT_TYPER = PRODUCTION_TYPER
+DEFAULT_SETS = ("B0", "B1", "B2", "B3", "QT", "QF")
 PRODUCTION = "open_cgenff.charges"
+PILOT_TYPER = REPO_ROOT / "prototype" / "typer_pilot.py"            # frozen baseline (SPEC 7.4)
+
+
+def resolve_typer(typer):
+    """Production typer, or a plug-in file defining type_molecule(rdkit_mol) -> types."""
+    if typer in (None, PRODUCTION_TYPER):
+        from ..typing import type_rdkit
+        return type_rdkit
+    return load_typer(typer)
+
+
+def _production_typed(rdmol):
+    from ..molecule import InputMolecule
+    from ..typing import type_molecule
+    return type_molecule(InputMolecule.from_rdkit(rdmol))
 
 
 def load_charge_engine(path, toppar):
@@ -46,17 +63,21 @@ def run(sets=DEFAULT_SETS, typer=DEFAULT_TYPER, charge_engine=PRODUCTION, toppar
         n_confusions=30):
     report = {"tool": banner(), "date": datetime.date.today().isoformat(),
               "typer": _display(typer), "charge_engine": _display(charge_engine)}
-    type_molecule = load_typer(typer) if {"B1", "B2", "B3"} & set(sets) else None
+    type_molecule = resolve_typer(typer) if {"B1", "B2", "B3"} & set(sets) else None
+    built = {}
     if "B0" in sets:
         report["B0"] = b0.score_charges(b0.load(), load_charge_engine(charge_engine, toppar_dir(toppar)))
     if "QT" in sets:
         report["QT"] = training_check(toppar).as_dict()
-    if "B1" in sets:
-        cases, stats = b1.build(toppar_dir(toppar) / TOPOLOGY_FILE)
-        report["B1"] = {"build": stats, "typing": score_typing(cases, type_molecule, n_confusions)}
-    if "B2" in sets:
-        cases, stats = b2.build(toppar_dir(toppar) / TOPOLOGY_FILE)
-        report["B2"] = {"build": stats, "typing": score_typing(cases, type_molecule, n_confusions)}
+    for name, module in (("B1", b1), ("B2", b2)):
+        if name in sets or "QF" in sets:
+            built[name] = module.build(toppar_dir(toppar) / TOPOLOGY_FILE)
+        if name in sets:
+            cases, stats = built[name]
+            report[name] = {"build": stats, "typing": score_typing(cases, type_molecule, n_confusions)}
+    if "QF" in sets:
+        report["QF"] = qf.score_formal_charges({k: v[0] for k, v in built.items()}, _production_typed,
+                                               IncrementTable.from_toppar(toppar_dir(toppar)), n_confusions)
     if "B3" in sets:
         cases, excluded = b3.build()
         report["B3"] = {"build": {"molecules": len(cases), "excluded": excluded},
@@ -66,8 +87,8 @@ def run(sets=DEFAULT_SETS, typer=DEFAULT_TYPER, charge_engine=PRODUCTION, toppar
 
 
 def _display(path):
-    if path in (None, PRODUCTION):
-        return PRODUCTION
+    if path in (PRODUCTION, PRODUCTION_TYPER):
+        return path
     path = Path(path).resolve()
     return str(path.relative_to(REPO_ROOT)) if path.is_relative_to(REPO_ROOT) else str(path)
 
@@ -107,6 +128,21 @@ def to_markdown(report, confusions=True):
                 out += [f"| {c['count']} | {c['ref']} | {c['pred']} | `{c['examples'][0]['smiles']}` "
                         f"[{c['examples'][0]['name']}] |" for c in m["confusions"]]
                 out.append("")
+    if "QF" in report:
+        out += ["## QF: typing-rule formal charges vs reference charges (SPEC 5.7)", "",
+                "Molecules with complete increments, no lone pairs and all types correct (production typer).", "",
+                "| set | split | molecules | formal charges all correct | atoms wrong |", "|---|---|---|---|---|"]
+        for name, r in report["QF"].items():
+            for split, m in r["splits"].items():
+                out.append(f"| {name} | {split} | {m['molecules']} | {m['correct']} | {m['atoms_wrong']} |")
+        out.append("")
+        rows = [(name, x) for name, r in report["QF"].items() for x in r["mismatches"]]
+        if confusions and rows:
+            out += ["Mismatches, development splits:", "", "| set | type | inferred | rules | count | example |",
+                    "|---|---|---|---|---|---|"]
+            out += [f"| {n} | {x['type']} | {x['inferred']:+d} | {x['rules']:+d} | {x['count']} | {x['example']} |"
+                    for n, x in rows]
+            out.append("")
     v = report["floor_violations"]
     out += ["## Regression floors (SPEC 7.4)", "", "all met" if not v else "\n".join(f"- FAIL: {x}" for x in v), ""]
     return "\n".join(out)
@@ -115,7 +151,9 @@ def to_markdown(report, confusions=True):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--sets", default=",".join(DEFAULT_SETS), help="comma-separated benchmark sets")
-    ap.add_argument("--typer", default=str(DEFAULT_TYPER), help="typer plug-in file defining type_molecule(mol)")
+    ap.add_argument("--typer", default=DEFAULT_TYPER,
+                    help=f"'{PRODUCTION_TYPER}' (default) or a plug-in file defining type_molecule(mol), "
+                         f"e.g. prototype/typer_pilot.py")
     ap.add_argument("--charge-engine", default=PRODUCTION,
                     help=f"'{PRODUCTION}' (default) or a module file such as prototype/charges.py")
     ap.add_argument("--toppar", help="CHARMM toppar directory (default: data/ from scripts/fetch_data.sh)")

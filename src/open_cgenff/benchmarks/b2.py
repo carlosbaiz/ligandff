@@ -18,6 +18,42 @@ RDLogger.DisableLog("rdApp.*")
 MANIFEST = REPO_ROOT / "benchmarks" / "b2_rtf_legacy.split.json"
 
 
+def _neutralize(m):
+    """Remove charge separation that DetermineBondOrders sometimes produces (e.g. a thioester as [S+]=C-[O-]):
+    while some +1 atom starts an alternating double/single path that ends with a single bond into a -1 atom, flip
+    the bond orders along it and clear both charges. Works on a kekulized RWMol; returns the number of flips."""
+    flips = 0
+    while True:
+        path = None
+        for a in m.GetAtoms():
+            if a.GetFormalCharge() != 1:
+                continue
+            # depth-first over alternating paths: (atom, bond list, next order wanted)
+            stack = [(a.GetIdx(), [], Chem.BondType.DOUBLE)]
+            while stack and path is None:
+                i, bonds, want = stack.pop()
+                for b in m.GetAtomWithIdx(i).GetBonds():
+                    j = b.GetOtherAtomIdx(i)
+                    if b.GetBondType() != want or b.GetIdx() in bonds or j == a.GetIdx() or len(bonds) > 12:
+                        continue
+                    if want == Chem.BondType.SINGLE and m.GetAtomWithIdx(j).GetFormalCharge() == -1:
+                        path = (a.GetIdx(), j, bonds + [b.GetIdx()])
+                        break
+                    nxt = Chem.BondType.SINGLE if want == Chem.BondType.DOUBLE else Chem.BondType.DOUBLE
+                    stack.append((j, bonds + [b.GetIdx()], nxt))
+            if path:
+                break
+        if path is None:
+            return flips
+        start, end, bonds = path
+        for k in bonds:
+            b = m.GetBondWithIdx(k)
+            b.SetBondType(Chem.BondType.SINGLE if b.GetBondType() == Chem.BondType.DOUBLE else Chem.BondType.DOUBLE)
+        for k in (start, end):
+            m.GetAtomWithIdx(k).SetFormalCharge(0)
+        flips += 1
+
+
 def _build_mol(res):
     """(RDKit molecule, reference types), or (None, reason)."""
     atoms = [a for a in res.atoms if element_of_type(a.type)]
@@ -36,13 +72,15 @@ def _build_mol(res):
         return None, "disconnected"
     try:
         rdDetermineBonds.DetermineBondOrders(m, charge=int(round(res.net_charge)), embedChiral=False)
+        Chem.Kekulize(m, clearAromaticFlags=True)
+        _neutralize(m)
         mol = m.GetMol()
         Chem.SanitizeMol(mol)
     except Exception:
         return None, "bond orders"
     if any(a.GetNumRadicalElectrons() for a in mol.GetAtoms()):
         return None, "radical"
-    return (mol, [a.type for a in atoms]), None
+    return (mol, [a.type for a in atoms], [a.charge for a in atoms]), None
 
 
 def build(rtf_path, manifest=MANIFEST):
@@ -59,10 +97,11 @@ def build(rtf_path, manifest=MANIFEST):
         if out is None:
             skipped[reason] = skipped.get(reason, 0) + 1
             continue
-        mol, ref = out
+        mol, ref, charges = out
         cases.append(TypingCase(res.name, mol, ref, split_of.get(res.name, "unassigned"),
                                 Chem.MolToSmiles(Chem.RemoveHs(mol)),
-                                {"origin": "legacy", "lonepair": res.has_lonepair, "net_charge": res.net_charge}))
+                                {"origin": "legacy", "lonepair": res.has_lonepair, "net_charge": res.net_charge,
+                                 "charges": charges}))
     if manifest is not None:
         built = {c.name for c in cases}
         if built != set(split_of):

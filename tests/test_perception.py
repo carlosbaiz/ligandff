@@ -182,4 +182,4 @@ def test_pilot_typer_on_production_perception(toppar):
                                                                'pilot_on_production_perception.py'), toppar=toppar)
     got = {(s, sp): m['molecules_correct'] for s in ('B1', 'B2', 'B3') for sp, m in report[s]['typing'].items()}
     assert got[('B1', 'train')] >= 873 and got[('B1', 'test')] >= 213
-    assert got[('B2', 'train')] >= 627 and got[('B2', 'test')] >= 158 and got[('B3', 'dev')] == 34
+    assert got[('B2', 'train')] >= 635 and got[('B2', 'test')] >= 161 and got[('B3', 'dev')] == 34   # B2 as rebuilt in M3

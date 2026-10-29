@@ -96,7 +96,7 @@ src/open_cgenff/       (package name follows the working name; rename with D1)
   molecule.py  TypedMolecule: types + typing-rule formal charges handed from typing to charges/parameters
   lonepairs.py (5.12)
   cli.py
-  benchmarks/  B0/B1/B3 builders, scoring, runner producing JSON/markdown reports (section 7);
+  benchmarks/  B0/B1/B2/B3 builders, QF formal-charge check, scoring, runner producing JSON/markdown reports (section 7);
                `python -m open_cgenff.benchmarks --check-floors`
 benchmarks/plugins/  typer plug-ins outside src/ (e.g. the pilot typer on production perception)
 benchmarks/    benchmark data and split manifests
@@ -196,27 +196,48 @@ Optional actions: `charge <n>` (formal charge used by charge assignment), `impr`
 `warn "<msg>"`, `err "<msg>"` (fatal), `altnum` (replace `?` in the type by 1/2 so that in a conjugated chain
 double-bonded atoms share a symbol and single-bonded neighbours alternate; the 1↔2 choice is arbitrary and
 parameter-symmetric).
-Status: not implemented (pilot used Python rules). Decision: implement this language exactly (it is published, fully
-specified, and matches CGenFF's ad-hoc type design); express all rules in it.
+Status: done (M3): `src/open_cgenff/typing/` (`rules.py` parser, `engine.py` interpreter). Decision: implement this
+language exactly (it is published, fully specified, and matches CGenFF's ad-hoc type design); express all rules in it.
+Semantics fixed where P-I is silent (interpretations, FINDINGS §7):
+- inside a group evaluated on a neighbour, nested `ne` does not go back over the bond just traversed. Evidence: P-I's
+  own `NG2R62` rule (Appendix A) would otherwise match every pyridine N through the N itself. `self` = the atom being
+  typed; ring keywords look at the atom's ring list (5.2); `rings n` = length of that list.
+- consumption: a ring matched inside `! ( … )` is not consumed; inside `or` the successful branch's rings are.
+- `altnum`: each conjugated chain of `?` atoms is numbered from its lowest-index atom (digit 1); `?` atoms joined by a
+  double bond share the digit, by a single bond they alternate.
+- `impr` records (center, three neighbours in index order); `err` is recorded as an error, not raised (the CLI decides).
+Extensions (not in P-I; used where the published keywords cannot express a pilot/data convention compactly):
+`def NAME ( … )` + `@NAME` macros (pure text substitution), `nh n`, `deg n`, `fc n` (resonance formal charge, 5.3),
+`inring [class] [size]`, `type PATTERN` (the atom's type, typed on demand; used by H and O rules), `rmember class [size]
+( … )` (some atom of one of the atom's rings), `fusion` (bridgehead whose rings share a bond/bridge: not spiro).
 Accept: one unit test per keyword incl. greedy `ne` order dependence; the Appendix A rules parse and fire as in
 P-I case studies (pyridinium N → NG2R61 with charge +1; 1,3-pentadiene C1 → CG2DC3, C2/C3/C4 → CG2DC? with altnum).
+Met: `tests/test_typing.py` with the Appendix A rules in `tests/fixtures/pi_fig5.rules`.
 
 ### 5.6 Typing rules (content: must be reconstructed)
 The official rule file is unpublished. Sources: Appendix A (all rules printed in P-I Fig. 5 and P-v5), the MASS-line
 type descriptions in `top_all36_cgenff.rtf`, the pilot rules (`prototype/typer_pilot.py`, which encode ~110 decisions
 learned from B1-train), and the reference molecules (B1, B2). Notable conventions found so far are listed in
-`docs/FINDINGS.md` §3.3. Work type-family by type-family; keep rules ordered most-specific-first; log every change
+`docs/FINDINGS.md` §3.3 and §7. Work type-family by type-family; keep rules ordered most-specific-first; log every change
 (section 10).
-Accept: section 7 targets.
+Status: rule file v1 done (M3): `src/open_cgenff/typing/rules/cgenff_v5.rules` (port of the pilot, P-I's `NG2R62`, and
+data-driven rules logged in `docs/RULES_CHANGELOG.md`). B1-train 895/904 (99.0 %), B1-test 220/226 (97.3 %), B2-train 720/728
+(98.9 %), B2-test 178/182 (97.8 %), B3 34/34.
+Accept: section 7 targets (M3: met).
 
 ### 5.7 Formal charges (typing-rule charges)
 Charge assignment needs integer formal charges q0 placed by typing rules, placed so delocalized groups stay symmetric:
 carboxylate −1 on the carbon (CG2O3), amidinium/guanidinium +1 on the carbon (CG2N1/CG2N2 and `sub CG2D: ne (bo 2 el N nb 4) charge 1`),
 ammonium N +1 (`sub NG_3P: nb 4 charge 1`), pyridinium-type ring N +1 (`typ NG2R61: arom 6 ne (bo 1) (bo 1) charge 1`).
 Inferred from training data (FINDINGS §2.2): PG1 −1, PG2 −2, OG312 −1, SG302 −1, SG3O1 −1, CG2R53 +1 in imidazolium.
+Also found in M3 (set QF): carbonate C (CG2O6) −2, boronate O (OG2D2 on B) −1, ALG1 −1, every iminium C (C=N+ with
+nb 4 N: CG2D*, CG2R52, CG2R53; P-I's `sub CG2D` rule) +1, ring C of an exocyclic amidinium (CG2R64) +1, cationic
+NG2R67/NG2RC0 +1. Cationic N and ring charges are only placed when the resonance formal charge (5.3) is +1.
 P-v5 mentions undocumented "specific rules … resetting the formal charges" to fix resonance mismatches between training
-and prediction: expect a few special cases.
+and prediction: expect a few special cases (unexplained so far: 23012O, C=O carbon −1 / O +1; C34H).
 Accept: for every B1/B2 molecule whose increments are complete, q0 from the rules equals round(q_ref − q_increments).
+Status: runner set QF, on molecules without lone pairs, with complete increments and all types correct: B1-train
+887/888, B1-test 218/218, B2-train 669/670, B2-test 166/166 (`src/open_cgenff/benchmarks/qf.py`).
 
 ### 5.8 Parameter database
 Read `par_all36_cgenff.prm` (v5.0, aligned) for parameter values and `par_all36_cgenff_increments.prm` for charge
@@ -309,7 +330,7 @@ B3 molecules; energies match CHARMM where CHARMM is available.
 |---|---|---|---|
 | B0 | `tests/fixtures/si_v5_reference.json`: 3 molecules, exact program 5.0 output (P-v5 SI Table S10) | done | unit test, must stay exact |
 | B1 | RTF residues with SMILES: 1,130 molecules / 27,512 atoms after graph mapping and repair of 94 SMILES with lost bond orders (`prototype/build_rtf_benchmark.py`). Split 80/20, seed 42 (`benchmarks/b1_rtf_zinc.split.json`). All are v5.0 ZINC-derived training molecules; 126 types | done | train = development; test = semi-sealed (see 7.2) |
-| B2 | the 937 RTF residues without SMILES (original CGenFF model compounds). Bond orders from connectivity + net charge (RDKit DetermineBondOrders; IC tables not needed) → 910 molecules / 17,669 atoms (23 disconnected, 4 failed). Split 80/20 seed 42: `benchmarks/b2_rtf_legacy.split.json` (728/182). Adds 32 types absent from B1 (aromatic Cl/Br/I, aliphatic halogens, phosphates PG0/1/2, OG303/OG304, SG301, CG323, CG2O7/OG2D5, NG331, HGPAM3, CG3AM*/HGAAM*, B, Se, Al …) | done (M2) | development (split 80/20 like B1) |
+| B2 | the 937 RTF residues without SMILES (original CGenFF model compounds). Bond orders from connectivity + net charge (RDKit DetermineBondOrders; IC tables not needed) → 910 molecules / 17,669 atoms (23 disconnected, 4 failed). Split 80/20 seed 42: `benchmarks/b2_rtf_legacy.split.json` (728/182). Adds 32 types absent from B1 (aromatic Cl/Br/I, aliphatic halogens, phosphates PG0/1/2, OG303/OG304, SG301, CG323, CG2O7/OG2D5, NG331, HGPAM3, CG3AM*/HGAAM*, B, Se, Al …). Since M3, charge separation produced by DetermineBondOrders along an alternating path (e.g. a thioester as `[S+]=C-[O-]`) is removed (14 residues; `b2.py:_neutralize`) | done (M2) | development (split 80/20 like B1) |
 | B3 | `benchmarks/charmm_gui_cpa/`: 34 CGenFF-typed species from CHARMM-GUI (CGenFF ≤ 4.6 era; 26 not in the reference set) | done | typing regression (must stay 100 %); charges only as version-drift reference |
 | B4 | annotated analogies in the parameter files (`from X, penalty= N`) | extract in M5 | fit/validate penalty matrix (leave-one-out) |
 | B5 | official CGenFF **5.0** outputs (`.mol2` input + `.str` output) for 200–1,000 diverse drug-like molecules, to be supplied by Carlos | pending (D4) | B5-dev (30 %) for calibration of tie-breaks/LP/analogy; **B5-test (70 %) sealed** = definition of done |
@@ -328,11 +349,14 @@ B3 molecules; energies match CHARMM where CHARMM is available.
 - analogy: same source parameter (%); |ΔTPS|; parameter value agreement.
 - runtime: molecules/s (official program: ~30/s on one 2012 core, P-II).
 
-### 7.4 Regression floors (current pilot; CI must enforce, production must beat)
-B0 exact; B1-train ≥ 874/904 (96.68 %, printed 96.7 %), B1-test ≥ 212/226 (93.81 %) molecules fully correct;
-B2-train ≥ 625/728 (85.85 %), B2-test ≥ 158/182 (86.81 %) (pilot baseline, added in M2);
-B3 100 % (34/34); QT = 2,255 residues, median RMSE 0.0098 e (FINDINGS §2.2). Enforced as exact counts in `src/open_cgenff/benchmarks/floors.py` and by CI
-(`.github/workflows/ci.yml`).
+### 7.4 Regression floors (CI must enforce)
+Pilot baseline (production must beat it): B1-train 874/904 (96.68 %, printed 96.7 %), B1-test 212/226 (93.81 %);
+B2-train 633/728, B2-test 161/182 (B2 as rebuilt in M3; 625/158 on the M2 build); B3 34/34.
+Floors since M3 (ratchet on the production typer; lower one only with a justification in `docs/RULES_CHANGELOG.md`):
+B0 exact; B1-train ≥ 895/904, B1-test ≥ 220/226, B2-train ≥ 720/728, B2-test ≥ 178/182 molecules fully correct;
+B3 100 % (34/34); QT = 2,255 residues, median RMSE 0.0098 e (FINDINGS §2.2); QF ≥ 887/218/669/166 molecules with
+correct formal charges (B1-train/test, B2-train/test). Enforced as exact counts in
+`src/open_cgenff/benchmarks/floors.py` and by CI (`.github/workflows/ci.yml`).
 
 ## 8. Milestones
 
@@ -341,7 +365,7 @@ B3 100 % (34/34); QT = 2,255 residues, median RMSE 0.0098 e (FINDINGS §2.2). En
 | M0 | Package skeleton, CI (pytest), data fetch, benchmark runner (port `prototype/score.py`, `build_rtf_benchmark.py`, `charmmgui_benchmark.py`) | `pytest` green incl. prototype tests; runner writes report for B0/B1/B3 | done (2026-10-29) |
 | M1 | Production charge engine (5.11) behind a clean API; formal charges passed from typing | B0 exact; training check reproduces FINDINGS §2.2 | done (2026-10-29); runner set QT |
 | M2 | Perception (5.2–5.4) incl. literal P-I resonance algorithm; build B2 | P-I worked examples; 126 P-I special cases run; B2 built (≥ 900 residues) | done (2026-10-29) |
-| M3 | Rule engine (5.5) + rule file v1 (5.6–5.7): Appendix A + port of pilot rules, then extend to B2 types | B1-train ≥ 99 %, B1-test ≥ 96 %, B2-train ≥ 98 %, B2-test ≥ 95 %, B3 100 %; rules changelog complete | bulk of the work: failure-driven loop |
+| M3 | Rule engine (5.5) + rule file v1 (5.6–5.7): Appendix A + port of pilot rules, then extend to B2 types | B1-train ≥ 99 %, B1-test ≥ 96 %, B2-train ≥ 98 %, B2-test ≥ 95 %, B3 100 %; rules changelog complete | done (2026-10-29): 99.0 / 97.3 / 98.9 / 97.8 / 100 %; QF formal charges 1,940/1,942 |
 | M4 | Parameter DB + analogy engine (5.8–5.9) with a provisional matrix | M064 fixture analog reproduced; unit tests for TPS composition (inner ×10, bond groups, reversal) | — |
 | M5 | Penalty-matrix reconstruction (5.10) | leave-one-out on B4: same source ≥ 85 %, TPS within ±0.5 ≥ 80 % (provisional) | inverse problem |
 | M6 | Lone pairs (5.12), `.str`/JSON writers, CLI, OpenMM/GROMACS export | B3 molecules build in OpenMM; `.str` matches fixture layout | — |

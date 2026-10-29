@@ -65,10 +65,12 @@ def _map_residue(res):
         if mol is None:
             return None, "unrepairable radical"
         repaired = True
-    ref = [None] * mol.GetNumAtoms()
+    ref, charges = [None] * mol.GetNumAtoms(), [None] * mol.GetNumAtoms()
+    q = {a.name: a.charge for a in res.atoms}
     for qi, mi in enumerate(match):
         ref[mi] = types[names[qi]]
-    return (mol, ref, repaired), None
+        charges[mi] = q[names[qi]]
+    return (mol, ref, charges, repaired), None
 
 
 def build(rtf_path, manifest=MANIFEST):
@@ -86,11 +88,11 @@ def build(rtf_path, manifest=MANIFEST):
         if out is None:
             skipped[reason] = skipped.get(reason, 0) + 1
             continue
-        mol, ref, repaired = out
+        mol, ref, charges, repaired = out
         n_repaired += repaired
         cases.append(TypingCase(res.name, mol, ref, split_of.get(res.name, "unassigned"), res.smiles,
                                 {"origin": "zinc" if res.name.startswith("230") else "legacy",
-                                 "lonepair": res.has_lonepair}))
+                                 "lonepair": res.has_lonepair, "charges": charges}))
     if manifest is not None:
         built = {c.name for c in cases}
         if built != set(split_of) or any(c.split == "unassigned" for c in cases):
