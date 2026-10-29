@@ -20,6 +20,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "open_cgenff.typing" = ["rules/*.rules"]
+"open_cgenff.params" = ["rules/*.rules"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

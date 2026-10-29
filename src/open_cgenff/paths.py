@@ -6,6 +6,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 TOPPAR_ENV = "OPEN_CGENFF_TOPPAR"
 INCREMENTS_FILE = "par_all36_cgenff_increments.prm"
 TOPOLOGY_FILE = "top_all36_cgenff.rtf"
+PARAMETER_FILE = "par_all36_cgenff.prm"
 
 
 class DataNotFound(FileNotFoundError):

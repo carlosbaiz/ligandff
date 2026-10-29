@@ -70,7 +70,8 @@ def _map_residue(res):
     for qi, mi in enumerate(match):
         ref[mi] = types[names[qi]]
         charges[mi] = q[names[qi]]
-    return (mol, ref, charges, repaired), None
+    impropers = [tuple(match[idx[n]] for n in imp) for imp in res.impropers if all(n in idx for n in imp)]
+    return (mol, ref, charges, impropers, repaired), None
 
 
 def build(rtf_path, manifest=MANIFEST):
@@ -88,11 +89,12 @@ def build(rtf_path, manifest=MANIFEST):
         if out is None:
             skipped[reason] = skipped.get(reason, 0) + 1
             continue
-        mol, ref, charges, repaired = out
+        mol, ref, charges, impropers, repaired = out
         n_repaired += repaired
         cases.append(TypingCase(res.name, mol, ref, split_of.get(res.name, "unassigned"), res.smiles,
                                 {"origin": "zinc" if res.name.startswith("230") else "legacy",
-                                 "lonepair": res.has_lonepair, "charges": charges}))
+                                 "lonepair": res.has_lonepair, "charges": charges,
+                                 "impropers": impropers}))
     if manifest is not None:
         built = {c.name for c in cases}
         if built != set(split_of) or any(c.split == "unassigned" for c in cases):

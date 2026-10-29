@@ -16,6 +16,7 @@ class Residue:
     net_charge: float
     atoms: list = field(default_factory=list)   # [RtfAtom] in file order
     bonds: list = field(default_factory=list)   # [(name, name)] from BOND/DOUBLE/TRIPLE, duplicates kept
+    impropers: list = field(default_factory=list)   # [(name, name, name, name)] from IMPR/IMPH, first atom central
     smiles: str = None                          # first 'SMILES:' comment after the RESI line
     has_lonepair: bool = False
     has_external_bond: bool = False             # a bond to a +/- atom of a neighbouring residue
@@ -46,6 +47,8 @@ def read_rtf(path):
                 pairs = list(zip(words[1::2], words[2::2]))
                 cur.bonds += pairs
                 cur.has_external_bond |= any(a[0] in "+-" or b[0] in "+-" for a, b in pairs)
+            elif words[0] in ("IMPR", "IMPH"):
+                cur.impropers += [tuple(words[i:i + 4]) for i in range(1, len(words) - 3, 4)]
             elif words[0] in ("LONEPAIR", "LONE"):
                 cur.has_lonepair = True
             elif words[0] == "END":

@@ -163,3 +163,33 @@ Only B1-train/B2-train failures were inspected; test splits are aggregates.
 - B2 input fix: DetermineBondOrders produced charge-separated structures for 14 residues (thioesters as `[S+]=C–[O−]`,
   2-alkylthio-pyrimidinones, a thiosulfate, a thiophosphate). `b2.py` now flips alternating paths between a +1 atom
   and a −1 atom. Pilot baseline on the rebuilt B2: 633/728 train, 161/182 test (was 625/158).
+
+## 8. Parameters by analogy (M4)
+`src/open_cgenff/params/` on `par_all36_cgenff.prm` (v5.0): 1,305 bonds, 6,776 angles (721 with Urey–Bradley),
+19,629 dihedrals (29,044 lines; up to 6 terms), 489 impropers; 7,234 `from …, penalty=` annotations.
+- Ordering: the header's rules (element priority C < N < O < P < S < halogens < misc < H, alphabetical within an
+  element; section sort keys bonds 1,2 / angles 2,1,3 / dihedrals 2,3,1,4 / impropers 1,4,2,3) reproduce the file:
+  every bond, angle and dihedral is in canonical orientation, and the line order is the collated order except for two
+  misplaced lines (dihedral NG2D1 CG25C1 CG25C2 OG2D3, improper NG2S3 CG2R64 HGP4 HGP4).
+- M064 (SI Table S10): with the provisional matrix the search returns the program's analog (CG321-CG2O5-CG311-CG331,
+  TPS 0.6: one outer substitution CG311→CG321 = nonbonded element 0.6, observed in the annotations); with the
+  nonbonded-everywhere analog for increments, charges and per-atom charge penalties match the official output
+  (charge penalty 0.669). M166/M223: no analogs, both penalties 0.
+- Provisional matrix (SPEC 5.10 status): 106 bonded / 260 nonbonded observed elements after excluding annotations with
+  a bond-group difference. Fallback medians (bonded / nonbonded): same family with 2/1/0 further common characters
+  0.6/1.0/1.5 and 2.0/3.0/4.0; same element, other family 9.0 / 68.0 (H types: 0.2 bonded, from HGP5→HGA1/HGA2);
+  different elements 9.0 (unobserved: maximum observed element) / 46.5. The nonbonded matrix makes element changes
+  cheaper than CG2↔CG3 changes (CG2N2→CG321 69, NG2R52→CG2R51 46.5): data, not a bug.
+- Leave-one-out baseline (every 10th annotated parameter, 725; the matrix elements come from the same annotations, so
+  this is optimistic): same source 36.4 % (bonds 82 %, angles 33 %, dihedrals 37 %, impropers 33 %), |ΔTPS| ≤ 0.5
+  46.3 %. Most misses involve fallback elements or multi-substitution analogs: the M5 problem.
+- Coverage: with reference types, every bond and angle of the 904 B1-train residues exists in the file; all dihedrals
+  except 22 through a linear centre (X–CG1T1≡CG1T2–Y, X–CG1N1≡NG1T1 neighbourhoods, 7 molecules) that CGenFF does
+  not define. Of 632 improper instances from the rules, 619 match a parameter exactly (outer atoms in any order).
+- Speed: 0.02–0.2 s per drug-like molecule for all bonded analogs plus charge analogs (search indexed by inner types).
+- Impropers (SPEC 5.13): the rule file v1 carried no `impr`. Ground truth = IMPR lines of the B1/B2 residues (first atom
+  always central, 617/617 on B1-train). Centres follow mostly from chemistry, not type: every exocyclic C=O/C=S carbon
+  (CG2O*, CG2R63, CG2R53 with C=O: 100 %), CG2N1/CG2N2, sp2 C with an exocyclic C=N (CG2D1, CG2DC*, CG25C1,
+  CG2R61, CG2R64), CG2D1O with an N neighbour (but ring C=C–O carbons have none, against P-I's N/O/S condition),
+  ring C next to a ring N carrying an exocyclic N (CG2R64 90/100, CG2R53 4/4), aryl NH2 N (NG2S3, 96/98).
+  Remaining B1-train mismatches: CG2R64 with an exocyclic N but no IMPR in the residue (8; e.g. 23001G).

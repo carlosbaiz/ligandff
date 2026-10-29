@@ -55,3 +55,11 @@ Before: pilot on production perception 873/213/627/158/34 (M2 B2 build).
    carbonate CG2O6 −2, ALG1 −1, cationic NG2R67/NG2RC0 +1. QF: 887/218/669/166 molecules with correct formal charges.
 
 After M3: 895/904 (99.0 %), 220/226 (97.3 %), 720/728 (98.9 %), 178/182 (97.8 %), 34/34; these are the new floors.
+
+## M4: impropers (2026-10-29)
+10. `impr` (SPEC 5.13; no type changes): `sub CGO … impr` (exocyclic C=O/C=S); pass-through `sub CG2 : … impr` routes
+    before the plain `sub CG2`: P-I's exocyclic C=N and C=N + exocyclic N conditions, P-I's third condition narrowed to
+    an N neighbour (plus O/S only for acyclic atoms: PY01, 23007W, SM172 have ring C=C–O without IMPR), aromatic C with
+    a ring N and an exocyclic N (2-aminopyrimidine type; 2300B7, CSGU); `typ NG2S3 … ne ( arom 6 ) impr` (230001).
+    QI (molecules with exactly the reference improper centres, B1-train/test, B2-train/test): 467/108/407/103 →
+    884/219/705/175. Typing unchanged: 895/220/720/178/34; QF unchanged.

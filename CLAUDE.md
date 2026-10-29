@@ -33,4 +33,4 @@ python prototype/charges.py fixtures --toppar data/toppar_c36_releases/charmm/to
 
 ## Layout
 `docs/` spec, findings, references, rules changelog · `prototype/` pilot code (reference) · `tests/` pytest +
-fixtures · `benchmarks/` benchmark data and split manifests · `scripts/` data fetch · `src/open_cgenff/` production package (typing rules: `src/open_cgenff/typing/rules/cgenff_v5.rules`) · `.github/workflows/ci.yml` CI (tests + floors)
+fixtures · `benchmarks/` benchmark data and split manifests · `scripts/` data fetch · `src/open_cgenff/` production package (typing rules: `src/open_cgenff/typing/rules/cgenff_v5.rules`; penalty rules: `src/open_cgenff/params/rules/penalties_v5.rules`) · `.github/workflows/ci.yml` CI (tests + floors)

@@ -43,7 +43,13 @@ cat CG
 sub CG1   : ne ( bo 3 )
 typ CG2RC7 : ne ( bo 2 ) @planar5 arom 7                         # aromatic 7-ring fused to a planar 5-ring (azulene)
 typ CG2R71 : ne ( bo 2 ) rmember arom 7 ( @planar5 arom 7 )      # incl. its C=O carbon (23001Q)
-sub CGO   : ne ( bo 2 or ( elos ) ( el Se ) ! ( inring ) )      # carbonyl / thiocarbonyl / selone (exocyclic)
+sub CGO   : ne ( bo 2 or ( elos ) ( el Se ) ! ( inring ) ) impr # carbonyl / thiocarbonyl / selone (exocyclic)
+# impropers (SPEC 5.13): the three P-I Fig. 5 conditions, as pass-through routes before the plain one
+sub CG2   : ne ( ! ( inring ) bo 2 el N ) impr                    # exocyclic C=N
+sub CG2   : ne ( bo 2 el N ) ( ! ( inring ) bo 1 el N ) impr      # amidine with an exocyclic N
+sub CG2   : ne ( bo 2 ) ! ( arom 7 ) ! ( arom 6 ) ! ( ring 5 ) ne ( el N ) impr
+sub CG2   : ne ( bo 2 ) ! ( ring ) ne ( elos ) impr              # P-I has N/O/S in rings too; ring C=C-O has none
+sub CG2   : ne ( bo 2 ) or ( arom 5 ) ( arom 6 ) ne ( inring el N ) ( ! ( inring ) el N ) impr   # e.g. 2-aminopyrimidine C2
 sub CG2   : ne ( bo 2 )
 typ CG2RC0 : or ( arom 5 ) ( arom 6 )                           # aromatic C whose Kekule double bond is elsewhere
 sub CG3   :
@@ -176,7 +182,7 @@ typ NG2P1  : ! ( ring ) ! ( nh 0 ) ne ( el C arom 6 ne ( inring el N fc 1 ) )   
 sub NGAM   : ne ( @carbonyl )
 typ NG2S3  : ne ( el P )                                       # phosphoramidate
 typ NG2S3  : ne ( el S ne ( el O nb 1 ) )                      # sulfamate (2300NR, NMSM)
-typ NG2S3  : nh 2 deg 3 ne ( arom 6 )
+typ NG2S3  : nh 2 deg 3 ne ( arom 6 ) impr
 typ NG3C51 : ring 5
 typ NG3N1  : ne ( el N )
 typ NG301  : nh 0

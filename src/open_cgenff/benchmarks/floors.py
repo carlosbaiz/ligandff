@@ -28,6 +28,13 @@ FORMAL_CHARGE_FLOORS = {  # QF: (set, split) -> minimum number of molecules with
     ("B2", "test"): 166,
 }
 
+IMPROPER_FLOORS = {  # QI: (set, split) -> minimum number of molecules with all improper centres correct (M4)
+    ("B1", "train"): 884,
+    ("B1", "test"): 219,
+    ("B2", "train"): 705,
+    ("B2", "test"): 175,
+}
+
 # QT: the increment model's fit to the training charges (FINDINGS 2.2); a change means the engine or the data changed
 CHARGE_TRAINING = {"residues": 2255, "median_rmse": 0.0098}
 
@@ -49,6 +56,13 @@ def check(report):
             m = qf.get(name, {}).get("splits", {}).get(split)
             if m is None or m["correct"] < floor:
                 problems.append(f"QF-{name}-{split}: {m and m['correct']} molecules with correct formal charges "
+                                f"(floor {floor})")
+    qi = report.get("QI")
+    if qi is not None:
+        for (name, split), floor in IMPROPER_FLOORS.items():
+            m = qi.get(name, {}).get("splits", {}).get(split)
+            if m is None or m["correct"] < floor:
+                problems.append(f"QI-{name}-{split}: {m and m['correct']} molecules with correct improper centres "
                                 f"(floor {floor})")
     for (name, split), floor in TYPING_FLOORS.items():
         m = report.get(name, {}).get("typing", {}).get(split)

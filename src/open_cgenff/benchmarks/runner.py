@@ -1,8 +1,9 @@
 """Benchmark runner: scores typing and charges on B0/B1/B2/B3 and writes JSON + markdown reports (SPEC 7.3).
 Set QT is the charge formula check on the training residues (FINDINGS 2.2); set QF checks the production typing-rule
-formal charges against the charges implied by the B1/B2 reference residues (SPEC 5.7).
+formal charges against the charges implied by the B1/B2 reference residues (SPEC 5.7); set QI checks the improper
+centres from typing-rule `impr` actions against the IMPR lines of those residues (SPEC 5.13).
 
-usage: python -m open_cgenff.benchmarks [--sets B0,B1,B2,B3,QT,QF] [--typer FILE] [--charge-engine FILE]
+usage: python -m open_cgenff.benchmarks [--sets B0,B1,B2,B3,QT,QF,QI] [--typer FILE] [--charge-engine FILE]
                                         [--toppar DIR] [--out DIR] [--check-floors]
 Hygiene (SPEC 7.2): confusion pairs and per-molecule failures are reported for development splits only.
 """
@@ -16,13 +17,13 @@ from pathlib import Path
 from .. import banner
 from ..charges import IncrementTable, assign_charges, training_check
 from ..paths import REPO_ROOT, TOPOLOGY_FILE, INCREMENTS_FILE, toppar_dir
-from . import b0, b1, b2, b3, floors, qf
+from . import b0, b1, b2, b3, floors, qf, qi
 from .common import load_typer
 from .scoring import score_typing
 
 PRODUCTION_TYPER = "open_cgenff.typing"
 DEFAULT_TYPER = PRODUCTION_TYPER
-DEFAULT_SETS = ("B0", "B1", "B2", "B3", "QT", "QF")
+DEFAULT_SETS = ("B0", "B1", "B2", "B3", "QT", "QF", "QI")
 PRODUCTION = "open_cgenff.charges"
 PILOT_TYPER = REPO_ROOT / "prototype" / "typer_pilot.py"            # frozen baseline (SPEC 7.4)
 
@@ -70,7 +71,7 @@ def run(sets=DEFAULT_SETS, typer=DEFAULT_TYPER, charge_engine=PRODUCTION, toppar
     if "QT" in sets:
         report["QT"] = training_check(toppar).as_dict()
     for name, module in (("B1", b1), ("B2", b2)):
-        if name in sets or "QF" in sets:
+        if name in sets or "QF" in sets or "QI" in sets:
             built[name] = module.build(toppar_dir(toppar) / TOPOLOGY_FILE)
         if name in sets:
             cases, stats = built[name]
@@ -78,6 +79,8 @@ def run(sets=DEFAULT_SETS, typer=DEFAULT_TYPER, charge_engine=PRODUCTION, toppar
     if "QF" in sets:
         report["QF"] = qf.score_formal_charges({k: v[0] for k, v in built.items()}, _production_typed,
                                                IncrementTable.from_toppar(toppar_dir(toppar)), n_confusions)
+    if "QI" in sets:
+        report["QI"] = qi.score_impropers({k: v[0] for k, v in built.items()}, _production_typed, n_confusions)
     if "B3" in sets:
         cases, excluded = b3.build()
         report["B3"] = {"build": {"molecules": len(cases), "excluded": excluded},
@@ -142,6 +145,22 @@ def to_markdown(report, confusions=True):
                     "|---|---|---|---|---|---|"]
             out += [f"| {n} | {x['type']} | {x['inferred']:+d} | {x['rules']:+d} | {x['count']} | {x['example']} |"
                     for n, x in rows]
+            out.append("")
+    if "QI" in report:
+        out += ["## QI: improper centres from typing rules vs residue IMPR lines (SPEC 5.13)", "",
+                "Molecules with all types correct (production typer).", "",
+                "| set | split | molecules | improper centres all correct | reference centres | missed | extra |",
+                "|---|---|---|---|---|---|---|"]
+        for name, r in report["QI"].items():
+            for split, m in r["splits"].items():
+                out.append(f"| {name} | {split} | {m['molecules']} | {m['correct']} | {m['reference_centres']} | "
+                           f"{m['missed']} | {m['extra']} |")
+        out.append("")
+        rows = [(name, x) for name, r in report["QI"].items() for x in r["mismatches"]]
+        if confusions and rows:
+            out += ["Mismatches, development splits:", "", "| set | centre type | kind | count | example |",
+                    "|---|---|---|---|---|"]
+            out += [f"| {n} | {x['type']} | {x['kind']} | {x['count']} | {x['example']} |" for n, x in rows]
             out.append("")
     v = report["floor_violations"]
     out += ["## Regression floors (SPEC 7.4)", "", "all met" if not v else "\n".join(f"- FAIL: {x}" for x in v), ""]

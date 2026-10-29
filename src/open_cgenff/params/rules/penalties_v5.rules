@@ -1,0 +1,56 @@
+# Penalty rules for the analogy search (SPEC 5.9-5.10), provisional (M4).
+#
+# Format (P-II): categories `cat NAME ... end` with entries `typ TYPE` (an atom type) or `sub NAME` (a subcategory),
+# each `: pri <p> alt <entry> <penalty> ... up <offset>`. Substitution cost a -> b: alt value within a category;
+# otherwise climb from a with `up` to the category containing both branches, take the `alt` between the branches,
+# then descend to b adding the `pri` of each entry on the way down (P-II: NG3P3 -> NG321 = 8 + 2 + 0 = 10).
+# `matrix bonded|nonbonded` selects the matrix the following categories define (extension: P-II prints only one
+# category and does not show how its file separates the two matrices). `bgrp <penalty> <types...>`: bond groups.
+#
+# Content: P-II Table 1 and Table 3 (SPEC Appendix B). Everything else in the provisional matrix comes from the
+# parameter file's `from <source>, penalty= <tps>` annotations at runtime (params/penalties.py). M5 replaces this.
+
+matrix bonded
+
+cat NG3
+sub NG3P   : pri  0 alt NG3N 2 up 12
+sub NG3N   : pri  5 alt NG3P 2 up 12
+end
+
+cat NG3P
+typ NG3P2  : pri 0 alt NG3P1 1 alt NG3P3 3 alt NG3P0 4 up 8
+typ NG3P3  : pri 1 alt NG3P2 1 alt NG3P1 2 alt NG3P0 4 up 8
+typ NG3P1  : pri 3 alt NG3P2 1 alt NG3P0 3 alt NG3P3 4 up 8
+typ NG3P0  : pri 4 alt NG3P1 1 alt NG3P2 2 alt NG3P3 4 up 8
+end
+
+# Two typos of the printed table corrected: NG311 row `alt NG311 5` -> NG331, NG3C51 row `alt NG3C51 4` -> NG3N1.
+cat NG3N
+typ NG321  : pri 0   alt NG311 1   alt NG301 1.5 alt NG3N1 2.5 alt NG3C51 3   alt NG331 4   up 8
+typ NG311  : pri 0.5 alt NG301 0.5 alt NG321 1   alt NG3N1 1.5 alt NG3C51 2   alt NG331 5   up 8
+typ NG301  : pri 1   alt NG311 0.5 alt NG321 1.5 alt NG3N1 2   alt NG3C51 2.5 alt NG331 5.5 up 8
+typ NG3N1  : pri 1.5 alt NG311 1.5 alt NG301 2   alt NG321 2.5 alt NG3C51 3.5 alt NG331 6.5 up 8
+typ NG3C51 : pri 2.5 alt NG311 2   alt NG301 2.5 alt NG321 3   alt NG3N1 4   alt NG331 7   up 8
+typ NG331  : pri 4   alt NG321 4   alt NG311 5   alt NG301 5.5 alt NG3N1 6.5 alt NG3C51 7   up 8
+end
+
+# bond groups for improving conjugated double bonds - considered as equivalent!
+bgrp 40 CG2DC1 CG2D1O CG25C1 CG251O CG2DC3 CG2D1 CG2D2 NG2D1 NG2P1
+bgrp 40 CG2DC2 CG2D2O CG25C2 CG252O CG2DC3 CG2D1 CG2D2 NG2D1 NG2P1
+# bond group for planar 7-membered rings
+bgrp 40 CG2R71 CG2RC7
+# bond group for planar 6-membered rings
+bgrp 20 CG2R61 CG2R62 CG2R63 CG2R64 CG2R66 NG2R60 NG2R61 NG2R62 CG2RC0 NG2RC0 CG2R67
+# bond group for planar 5-membered rings
+bgrp 20 CG2R51 CG2R52 CG2R53 NG2R50 NG2R51 NG2R52 NG2R53 OG2R50 SG2R50
+# bond group for all 5-membered rings
+bgrp 20 CG3C50 CG3C51 CG3C52 CG3C53 CG3C54 NG3C51 OG3C51 CG3RC1 CG2R51 CG2R52 CG2R53 NG2R50
+        NG2R51 NG2R52 NG2R53 OG2R50 SG2R50 CG25C1 CG25C2 CG251O CG252O CG2RC0 NG2RC0 CG2RC7
+# bond group for 4-membered rings
+bgrp 60 CG3C41 CG3RC1
+# bond group for 3-membered rings
+bgrp 80 CG3C31 CG3RC1
+# bond group for biphenyls
+bgrp 47 CG2R67
+# bond group for distinguishing triple bonds
+bgrp 27 CG1T1 CG1N1 NG1T1

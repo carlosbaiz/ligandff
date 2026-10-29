@@ -55,7 +55,7 @@ def _neutralize(m):
 
 
 def _build_mol(res):
-    """(RDKit molecule, reference types), or (None, reason)."""
+    """(RDKit molecule, reference types, reference charges, RTF impropers as atom indices), or (None, reason)."""
     atoms = [a for a in res.atoms if element_of_type(a.type)]
     if len(atoms) < 2:
         return None, "fewer than 2 atoms"
@@ -80,7 +80,8 @@ def _build_mol(res):
         return None, "bond orders"
     if any(a.GetNumRadicalElectrons() for a in mol.GetAtoms()):
         return None, "radical"
-    return (mol, [a.type for a in atoms], [a.charge for a in atoms]), None
+    impropers = [tuple(idx[n] for n in imp) for imp in res.impropers if all(n in idx for n in imp)]
+    return (mol, [a.type for a in atoms], [a.charge for a in atoms], impropers), None
 
 
 def build(rtf_path, manifest=MANIFEST):
@@ -97,11 +98,11 @@ def build(rtf_path, manifest=MANIFEST):
         if out is None:
             skipped[reason] = skipped.get(reason, 0) + 1
             continue
-        mol, ref, charges = out
+        mol, ref, charges, impropers = out
         cases.append(TypingCase(res.name, mol, ref, split_of.get(res.name, "unassigned"),
                                 Chem.MolToSmiles(Chem.RemoveHs(mol)),
                                 {"origin": "legacy", "lonepair": res.has_lonepair, "net_charge": res.net_charge,
-                                 "charges": charges}))
+                                 "charges": charges, "impropers": impropers}))
     if manifest is not None:
         built = {c.name for c in cases}
         if built != set(split_of):
