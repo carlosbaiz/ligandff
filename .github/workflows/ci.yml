@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      OPEN_CGENFF_REQUIRE_DATA: "1"   # missing CGenFF data must fail the run, not skip tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: pip install -e ".[dev]"
+
+      # Third-party force-field data is never committed; it is fetched at pinned commits (SPEC 2.3)
+      - name: Cache pinned CGenFF data
+        uses: actions/cache@v4
+        with:
+          path: data
+          key: cgenff-data-${{ hashFiles('scripts/fetch_data.sh') }}
+
+      - name: Fetch data
+        run: bash scripts/fetch_data.sh
+
+      - name: Tests
+        run: python -m pytest -q
+
+      - name: Benchmarks (B0/B1/B3) and regression floors
+        run: python -m open_cgenff.benchmarks --out build/report --check-floors
+
+      - name: Upload benchmark report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-report
+          path: build/report/

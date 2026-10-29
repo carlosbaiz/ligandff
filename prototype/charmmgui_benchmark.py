@@ -51,10 +51,10 @@ def build(atoms, bonds):
 
 
 rows = []; data = []
-for fn in sorted(glob.glob(os.path.join(itp_dir, '*.itp'))):
-    base = os.path.basename(fn)
-    if base.startswith('cgen_'): continue
-    name, atoms, bonds = parse(fn)
+# species = <A>.itp names; <A>.itp may be absent (git-ignored parameter file) when its topology is in cgen_<A>.itp
+for base in sorted({os.path.basename(f).removeprefix('cgen_') for f in glob.glob(os.path.join(itp_dir, '*.itp'))}):
+    fn = os.path.join(itp_dir, base)
+    name, atoms, bonds = parse(fn) if os.path.exists(fn) else (None, [], [])
     if not atoms and os.path.exists(os.path.join(itp_dir, 'cgen_' + base)):   # files swapped (MBN)
         name, atoms, bonds = parse(os.path.join(itp_dir, 'cgen_' + base))
     ref = [a['type'] for a in atoms]

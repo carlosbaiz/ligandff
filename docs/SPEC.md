@@ -87,7 +87,7 @@ Plus a machine-readable JSON report (types, charges, penalties, parameter proven
 ## 4. Architecture
 
 ```
-src/<pkg>/
+src/open_cgenff/       (package name follows the working name; rename with D1)
   io/          mol2/sdf readers; RTF/PRM readers (incl. the !<% ... %>! increments field); .str + JSON writers
   perception/  rings.py (5.2), resonance.py (5.3), aromaticity.py (5.4)
   typing/      engine.py (P-I rule language interpreter, 5.5); rules/cgenff_v5.rules (5.6)
@@ -95,7 +95,9 @@ src/<pkg>/
   charges/     increments.py, penalties.py (5.11)
   lonepairs.py (5.12)
   cli.py
-benchmarks/    builders + runner producing JSON/markdown reports (section 7)
+  benchmarks/  B0/B1/B3 builders, scoring, runner producing JSON/markdown reports (section 7);
+               `python -m open_cgenff.benchmarks --check-floors`
+benchmarks/    benchmark data and split manifests
 prototype/     pilot code (reference only; not imported by src/)
 ```
 Pipeline: read → perceive (rings → resonance → ring classes) → type (+ formal charges, impropers, warnings)
@@ -302,13 +304,15 @@ B3 molecules; energies match CHARMM where CHARMM is available.
 - runtime: molecules/s (official program: ~30/s on one 2012 core, P-II).
 
 ### 7.4 Regression floors (current pilot; CI must enforce, production must beat)
-B0 exact; B1-train ≥ 96.7 %, B1-test ≥ 93.8 % molecules fully correct; B3 100 % (34/34).
+B0 exact; B1-train ≥ 874/904 (96.68 %, printed 96.7 %), B1-test ≥ 212/226 (93.81 %) molecules fully correct;
+B3 100 % (34/34). Enforced as exact counts in `src/open_cgenff/benchmarks/floors.py` and by CI
+(`.github/workflows/ci.yml`).
 
 ## 8. Milestones
 
 | | milestone | acceptance | notes |
 |---|---|---|---|
-| M0 | Package skeleton, CI (pytest), data fetch, benchmark runner (port `prototype/score.py`, `build_rtf_benchmark.py`, `charmmgui_benchmark.py`) | `pytest` green incl. prototype tests; runner writes report for B0/B1/B3 | — |
+| M0 | Package skeleton, CI (pytest), data fetch, benchmark runner (port `prototype/score.py`, `build_rtf_benchmark.py`, `charmmgui_benchmark.py`) | `pytest` green incl. prototype tests; runner writes report for B0/B1/B3 | done (2026-10-29) |
 | M1 | Production charge engine (5.11) behind a clean API; formal charges passed from typing | B0 exact; training check reproduces FINDINGS §2.2 | port `prototype/charges.py` |
 | M2 | Perception (5.2–5.4) incl. literal P-I resonance algorithm; build B2 | P-I worked examples; 126 P-I special cases run; B2 built (≥ 900 residues) | algorithmically subtle |
 | M3 | Rule engine (5.5) + rule file v1 (5.6–5.7): Appendix A + port of pilot rules, then extend to B2 types | B1-train ≥ 99 %, B1-test ≥ 96 %, B2-train ≥ 98 %, B2-test ≥ 95 %, B3 100 %; rules changelog complete | bulk of the work: failure-driven loop |

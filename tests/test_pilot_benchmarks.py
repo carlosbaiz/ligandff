@@ -13,14 +13,6 @@ def molecule_accuracy(data, type_molecule, split=None):
     return ok / len(rows)
 
 
-@pytest.fixture(scope='session')
-def b1(toppar, root, tmp_path_factory):
-    out = tmp_path_factory.mktemp('b1') / 'b1.pkl'
-    subprocess.run([sys.executable, os.path.join(root, 'prototype', 'build_rtf_benchmark.py'),
-                    os.path.join(toppar, 'top_all36_cgenff.rtf'), str(out)], check=True, capture_output=True)
-    return pickle.load(open(out, 'rb'))
-
-
 def test_b1_split_is_stable(b1, root):
     import json
     ref = json.load(open(os.path.join(root, 'benchmarks', 'b1_rtf_zinc.split.json')))
