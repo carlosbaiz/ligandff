@@ -106,3 +106,22 @@ NG301→NG311 0.5, NG3C51→NG311 2.0); the nonbonded matrix differs (e.g. NG3C5
 ## 5. Compute
 All benchmarks run in seconds on one CPU core (RDKit). Projected cost of completing typing + penalty matrix with an
 agent loop: ~150–400 refinement rounds, ~30–160 M input tokens (mostly cache reads) + 1–4 M output tokens.
+
+## 6. Perception (M2)
+Production perception (`src/open_cgenff/perception/`) on the P-I material and the pilot typer:
+- P-I worked examples reproduced exactly: Fig. 4 yields structures H, I, J with scores 12, 11, 11 in that order and
+  keeps I; pyridinium yields two structures scoring 6 with the pre-0.9.7 coefficients (as printed in case study 1)
+  and 11 with the current ones. The choice order (lowest-index neighbour, double before single, neutral before
+  charged) is read from the Fig. 4 trails.
+- All 126 P-I SI special cases run (1.9 s total). Two warn: `fuller_all_ar` (search budget reached; P-I notes
+  fullerenes are expensive) and `isoindenate` (no valid structure without a carbanion).
+- Score scope: counting the whole molecule's charge in `Z_mol` made B2-train worse (621 vs 625 molecules, −93 atoms):
+  a fixed phosphate dianion makes an N+ that breaks purine aromaticity cheaper (AMP, GTP analogues). Counting only
+  the charges chosen on the subgraph gives 627/728 and equal B2-test aggregates. Adopted as the interpretation.
+- Pilot typer on production vs its own perception: B1-train 873 vs 874, B1-test 213 vs 212, B2-train 627 vs 625,
+  B2-test 158 vs 158, B3 34/34; atoms correct B1-train 21,999 vs 21,995. B1-train changes: 2300RV and 230051 fixed;
+  2300J3 and 2300PE lost because their radical-repaired SMILES put the enolate charge on the other oxygen and P-I
+  takes non-aromatic input bond orders literally (the pilot re-chose among RDKit resonance forms); 230003 lost because
+  a pilot rule relied on RDKit moving the amidinium charge through non-aromatic conjugation. Remaining B2-train
+  differences come from B2 inputs whose RDKit bond orders are unusual (PNTM gets an `[O+]=` oxonium, SM033 an azide
+  form): see `benchmarks/b2_rtf_legacy.NOTES.md`.

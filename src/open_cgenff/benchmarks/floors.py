@@ -5,6 +5,8 @@ from fractions import Fraction
 TYPING_FLOORS = {  # (set, split) -> minimum fraction of molecules with all atoms typed correctly
     ("B1", "train"): Fraction(874, 904),
     ("B1", "test"): Fraction(212, 226),
+    ("B2", "train"): Fraction(625, 728),        # pilot baseline on B2 (built in M2)
+    ("B2", "test"): Fraction(158, 182),
     ("B3", "dev"): Fraction(1),
 }
 

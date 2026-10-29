@@ -3,7 +3,7 @@
 An open-source, **CGenFF-compatible** atom typer and parameter/charge assigner for small molecules: a clean-room
 reimplementation of the CGenFF program (v5.0) from the published algorithms and the public CGenFF 5.0 data.
 Not affiliated with, or endorsed by, the CGenFF developers or SilcsBio. Status: specification, verified prototypes, package skeleton with benchmark runner (M0),
-production charge engine (M1).
+production charge engine (M1), perception and benchmark B2 (M2).
 
 - `docs/SPEC.md` – technical specification, benchmarks, milestones
 - `docs/FINDINGS.md` – what has been verified so far, with numbers

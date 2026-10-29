@@ -1,7 +1,7 @@
-"""Benchmark runner: scores typing and charges on B0/B1/B3 and writes JSON + markdown reports (SPEC 7.3).
+"""Benchmark runner: scores typing and charges on B0/B1/B2/B3 and writes JSON + markdown reports (SPEC 7.3).
 Set QT is the charge formula check on the training residues (FINDINGS 2.2).
 
-usage: python -m open_cgenff.benchmarks [--sets B0,B1,B3,QT] [--typer FILE] [--charge-engine FILE]
+usage: python -m open_cgenff.benchmarks [--sets B0,B1,B2,B3,QT] [--typer FILE] [--charge-engine FILE]
                                         [--toppar DIR] [--out DIR] [--check-floors]
 Hygiene (SPEC 7.2): confusion pairs and per-molecule failures are reported for development splits only.
 """
@@ -15,12 +15,12 @@ from pathlib import Path
 from .. import banner
 from ..charges import IncrementTable, assign_charges, training_check
 from ..paths import REPO_ROOT, TOPOLOGY_FILE, INCREMENTS_FILE, toppar_dir
-from . import b0, b1, b3, floors
+from . import b0, b1, b2, b3, floors
 from .common import load_typer
 from .scoring import score_typing
 
 DEFAULT_TYPER = REPO_ROOT / "prototype" / "typer_pilot.py"            # until the production typer exists (M3)
-DEFAULT_SETS = ("B0", "B1", "B3", "QT")
+DEFAULT_SETS = ("B0", "B1", "B2", "B3", "QT")
 PRODUCTION = "open_cgenff.charges"
 
 
@@ -46,7 +46,7 @@ def run(sets=DEFAULT_SETS, typer=DEFAULT_TYPER, charge_engine=PRODUCTION, toppar
         n_confusions=30):
     report = {"tool": banner(), "date": datetime.date.today().isoformat(),
               "typer": _display(typer), "charge_engine": _display(charge_engine)}
-    type_molecule = load_typer(typer) if {"B1", "B3"} & set(sets) else None
+    type_molecule = load_typer(typer) if {"B1", "B2", "B3"} & set(sets) else None
     if "B0" in sets:
         report["B0"] = b0.score_charges(b0.load(), load_charge_engine(charge_engine, toppar_dir(toppar)))
     if "QT" in sets:
@@ -54,6 +54,9 @@ def run(sets=DEFAULT_SETS, typer=DEFAULT_TYPER, charge_engine=PRODUCTION, toppar
     if "B1" in sets:
         cases, stats = b1.build(toppar_dir(toppar) / TOPOLOGY_FILE)
         report["B1"] = {"build": stats, "typing": score_typing(cases, type_molecule, n_confusions)}
+    if "B2" in sets:
+        cases, stats = b2.build(toppar_dir(toppar) / TOPOLOGY_FILE)
+        report["B2"] = {"build": stats, "typing": score_typing(cases, type_molecule, n_confusions)}
     if "B3" in sets:
         cases, excluded = b3.build()
         report["B3"] = {"build": {"molecules": len(cases), "excluded": excluded},
@@ -87,7 +90,7 @@ def to_markdown(report, confusions=True):
                 f"{r['residues']} residues with complete increments; median per-molecule RMSE {r['median_rmse']:.4f} e; "
                 f"atoms within 0.01 e: {r['fraction_within_0.01']:.1%}, within 0.05 e: {r['fraction_within_0.05']:.1%}",
                 "", f"Most frequent inferred formal charges: {top}", ""]
-    for name in ("B1", "B3"):
+    for name in ("B1", "B2", "B3"):
         if name not in report:
             continue
         out += [f"## {name}: typing", "", f"build: `{json.dumps(report[name]['build'])}`", "",

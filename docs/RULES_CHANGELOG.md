@@ -12,3 +12,8 @@ One entry per typing- or penalty-rule change: date, rule(s), motivating molecule
 - v4: biaryl test restricted to shared aromatic 6-rings; NG2R62 via aromatic heteroatoms; NG2RC0 needs planar 5-ring;
   F counts after 5-ring check; resonance tie-break prefers ring-centred cation; bridgehead definition. → 96.7 % / 93.8 %.
 Details of each convention: `docs/FINDINGS.md` §3.3.
+
+## Perception (M2, no rule changes)
+- Pilot typer on production perception (`benchmarks/plugins/pilot_on_production_perception.py`): B1 train 873/904
+  (−1), test 213/226 (+1); B2 train 627/728 (+2), test 158/182 (=); B3 34/34. Explanations: FINDINGS §6.
+- B2 baseline (pilot typer, own perception): train 625/728 (85.85 %), test 158/182 (86.81 %); now a CI floor.

@@ -88,8 +88,8 @@ Plus a machine-readable JSON report (types, charges, penalties, parameter proven
 
 ```
 src/open_cgenff/       (package name follows the working name; rename with D1)
-  io/          mol2/sdf readers; RTF/PRM readers (incl. the !<% ... %>! increments field); .str + JSON writers
-  perception/  rings.py (5.2), resonance.py (5.3), aromaticity.py (5.4)
+  io/          mol2 reader (sdf/SMILES via RDKit + InputMolecule.from_rdkit); RTF/PRM readers (incl. the !<% ... %>! increments field); .str + JSON writers
+  perception/  rings.py (5.2), resonance.py (5.3), aromaticity.py (5.4); perceive() -> Perception
   typing/      engine.py (P-I rule language interpreter, 5.5); rules/cgenff_v5.rules (5.6)
   params/      database.py (5.8), penalties.py + rules/penalties_v5.rules (5.9-5.10), analogy.py
   charges/     increments.py, penalties.py (5.11), training.py (formula check, FINDINGS 2.2)
@@ -98,6 +98,7 @@ src/open_cgenff/       (package name follows the working name; rename with D1)
   cli.py
   benchmarks/  B0/B1/B3 builders, scoring, runner producing JSON/markdown reports (section 7);
                `python -m open_cgenff.benchmarks --check-floors`
+benchmarks/plugins/  typer plug-ins outside src/ (e.g. the pilot typer on production perception)
 benchmarks/    benchmark data and split manifests
 prototype/     pilot code (reference only; not imported by src/)
 ```
@@ -112,6 +113,9 @@ Each item lists: what the sources say, status, and acceptance tests.
 Parse mol2 (Tripos) including `ar` bonds and formal charges in atom types (e.g. `N.4`). Keep input atom order: the
 official resonance and `altnum` behaviour can depend on it (5.3, 5.5).
 Accept: round-trip all molecules of B1/B2/B3 and the 126 P-I SI special cases without loss of graph or charge.
+Status (M2): `io/mol2.py` + `InputMolecule` (`molecule.py`; RDKit aromatic bonds → `ar`). mol2 carries no formal
+charges (the charge column is partial charges), so charges outside the aromatic subgraph are derived from valences
+(N with valence 4 → +1, terminal single-bonded O → −1, …), which covers `N.4`; all 126 special cases parse.
 
 ### 5.2 Ring perception (P-I)
 - Rings are only those with < 8 atoms. Larger rings are treated as acyclic.
@@ -121,9 +125,13 @@ Accept: round-trip all molecules of B1/B2/B3 and the 126 P-I SI special cases wi
   sets is acceptable.
 - 3- and 4-membered rings are typed immediately; 5–7-membered rings go to aromaticity perception.
 - Ring conditions in rules consume a ring once matched (5.5).
-- Open point: precise definition of "bridgehead" for this purpose (pilot used ≥ 3 ring bonds). Calibrate on B1/B2.
+- Open point: precise definition of "bridgehead" for this purpose (pilot used ≥ 3 ring bonds, kept in M2; spiro atoms
+  therefore count as bridgeheads here). Calibrate on B1/B2.
 Accept: unit tests on naphthalene, norbornane, bicyclo[2.2.2]octane, spiro[4.4]nonane, cubane-like cages, the P-I SI
 special cases (`specialcases/*.mol2` from the P-I SI archive: 5rings1/2, bigdiamond, spiro1, fullerenes → warning).
+Status (M2): `perception/rings.py`: P-I's first stage (strip atoms with < 2 neighbours), then exhaustive enumeration
+of 3–7-membered simple cycles, which yields the same ring sets; ties between equal-size rings broken by atom indices.
+SI archive: `bash scripts/import_pi_si.sh <ci300363c_si_001.zip>` → `data/pi_si/` (local only; tests skip without it).
 
 ### 5.3 Resonance resolution (P-I)
 - Operates on the subgraph of "aromatic" input bonds. Depth-first traversal with a trail; choices: bond order of
@@ -133,12 +141,24 @@ special cases (`specialcases/*.mol2` from the P-I SI archive: 5rings1/2, bigdiam
 - Score: `8|Z_mol| + 4 Σ_{Z<0}|Z_atom| + 3 Σ_{Z>0}|Z_atom| + 2 (N_potential_aromatic − N_aromatic)`
   (coefficients changed from 4,2,2,1 in program 0.9.7). Potential aromatic ring = 5–7-membered ring whose atoms all have
   ≤ 3 substituents.
-- Worked examples in P-I: pyridinium → two structures, score 6 each; Fig. 4 molecule → structures scored 12 and 11.
+- Worked examples in P-I: pyridinium → two structures, score 6 each (case study 1 uses the pre-0.9.7 coefficients
+  4 + 2; with 8,4,3,2 it is 8 + 3 = 11); Fig. 4 molecule → structures H, I, J scored 12, 11, 11 in that order, I kept.
+- Choice order read from Fig. 4: lowest-index untraversed neighbour first, double before single, neutral before
+  charged; jumps go to the most recent trail node with untraversed edges.
+- `Z` in the score counts only the charges the algorithm chooses on the subgraph, not fixed charges elsewhere
+  (interpretation; with the whole-molecule charge, a phosphate dianion makes an aromaticity-breaking N+ cheaper and
+  nucleotides such as AMP are mistyped; FINDINGS §6).
 - Ties are broken by traversal order (first structure found wins) ⇒ output can depend on input atom order. The pilot
   used an RDKit enumeration + heuristic tie-break and got 1 avoidable error class (quinolinium). Implement P-I's
   algorithm literally, starting from the lowest-index atom, and calibrate start/choice order against B5.
 - The resonance formal charges are separate from the formal charges assigned by typing rules (5.7).
 Accept: P-I worked examples reproduce the published scores; pilot regression on B1 not worse.
+Status (M2): `perception/resonance.py`, a lexicographic search over the trail's choice sequence with valence-bound
+pruning (finds structures in the same order as the trail algorithm). Both worked examples reproduced exactly.
+Additions not in P-I, each with a warning: carbon −1 allowed if no structure is valid otherwise (isoindenide);
+step budget 500,000 (all-aromatic fullerene → warning, best structure so far). Pilot typer on production perception:
+B1-train 873/904 (−1 vs pilot perception), B1-test 213/226 (+1), B2-train 627/728 (+2), B2-test 158/182 (=), B3 34/34;
+atom accuracy up on B1 (FINDINGS §6).
 
 ### 5.4 Ring classes and aromaticity (P-I)
 Four classes: all-sp3 (no ring atom in any double bond); all-sp2 (every ring atom in a double bond, except at most one
@@ -148,7 +168,9 @@ to another aromatic ring = 1; heteroatom with only single bonds not in another a
 another aromatic ring = 1 or 2, whichever makes the ring aromatic. Iterate over all candidate rings until no ring changes.
 P-I: this reproduces aromatic vs non-aromatic types on all 315 cyclic model compounds.
 Known limitation (by design): [4N+10]annulenes fail; only two `altnum` symbols.
-Status: implemented in `prototype/perceive.py` (on RDKit Kekulé forms).
+Status: `perception/aromaticity.py` (M2, ported from `prototype/perceive.py`; iterates until no ring changes, max 50).
+Extension kept from the pilot: a carbanion with only single bonds counts 2 π electrons. Inputs where RDKit marks a
+fusion bond non-aromatic (e.g. azulene) keep it single, and the 5-ring then counts 5 electrons (not aromatic).
 
 ### 5.5 Typing rule engine (P-I, fully specified)
 Rule file = categories `cat <name> … end`. Each rule: `<action> : <conditions…> [optional actions…]`.
@@ -287,7 +309,7 @@ B3 molecules; energies match CHARMM where CHARMM is available.
 |---|---|---|---|
 | B0 | `tests/fixtures/si_v5_reference.json`: 3 molecules, exact program 5.0 output (P-v5 SI Table S10) | done | unit test, must stay exact |
 | B1 | RTF residues with SMILES: 1,130 molecules / 27,512 atoms after graph mapping and repair of 94 SMILES with lost bond orders (`prototype/build_rtf_benchmark.py`). Split 80/20, seed 42 (`benchmarks/b1_rtf_zinc.split.json`). All are v5.0 ZINC-derived training molecules; 126 types | done | train = development; test = semi-sealed (see 7.2) |
-| B2 | the 937 RTF residues without SMILES (original CGenFF model compounds). 936 have IC tables → build 3D coordinates → bond orders (RDKit DetermineBondOrders + net charge) → map types. Adds 32 types absent from B1 (aromatic Cl/Br/I, aliphatic halogens, phosphates PG0/1/2, OG303/OG304, SG301, CG323, CG2O7/OG2D5, NG331, HGPAM3, CG3AM*/HGAAM*, B, Se, Al …) | to build (M2) | development (split 80/20 like B1) |
+| B2 | the 937 RTF residues without SMILES (original CGenFF model compounds). Bond orders from connectivity + net charge (RDKit DetermineBondOrders; IC tables not needed) → 910 molecules / 17,669 atoms (23 disconnected, 4 failed). Split 80/20 seed 42: `benchmarks/b2_rtf_legacy.split.json` (728/182). Adds 32 types absent from B1 (aromatic Cl/Br/I, aliphatic halogens, phosphates PG0/1/2, OG303/OG304, SG301, CG323, CG2O7/OG2D5, NG331, HGPAM3, CG3AM*/HGAAM*, B, Se, Al …) | done (M2) | development (split 80/20 like B1) |
 | B3 | `benchmarks/charmm_gui_cpa/`: 34 CGenFF-typed species from CHARMM-GUI (CGenFF ≤ 4.6 era; 26 not in the reference set) | done | typing regression (must stay 100 %); charges only as version-drift reference |
 | B4 | annotated analogies in the parameter files (`from X, penalty= N`) | extract in M5 | fit/validate penalty matrix (leave-one-out) |
 | B5 | official CGenFF **5.0** outputs (`.mol2` input + `.str` output) for 200–1,000 diverse drug-like molecules, to be supplied by Carlos | pending (D4) | B5-dev (30 %) for calibration of tie-breaks/LP/analogy; **B5-test (70 %) sealed** = definition of done |
@@ -308,6 +330,7 @@ B3 molecules; energies match CHARMM where CHARMM is available.
 
 ### 7.4 Regression floors (current pilot; CI must enforce, production must beat)
 B0 exact; B1-train ≥ 874/904 (96.68 %, printed 96.7 %), B1-test ≥ 212/226 (93.81 %) molecules fully correct;
+B2-train ≥ 625/728 (85.85 %), B2-test ≥ 158/182 (86.81 %) (pilot baseline, added in M2);
 B3 100 % (34/34); QT = 2,255 residues, median RMSE 0.0098 e (FINDINGS §2.2). Enforced as exact counts in `src/open_cgenff/benchmarks/floors.py` and by CI
 (`.github/workflows/ci.yml`).
 
@@ -317,7 +340,7 @@ B3 100 % (34/34); QT = 2,255 residues, median RMSE 0.0098 e (FINDINGS §2.2). En
 |---|---|---|---|
 | M0 | Package skeleton, CI (pytest), data fetch, benchmark runner (port `prototype/score.py`, `build_rtf_benchmark.py`, `charmmgui_benchmark.py`) | `pytest` green incl. prototype tests; runner writes report for B0/B1/B3 | done (2026-10-29) |
 | M1 | Production charge engine (5.11) behind a clean API; formal charges passed from typing | B0 exact; training check reproduces FINDINGS §2.2 | done (2026-10-29); runner set QT |
-| M2 | Perception (5.2–5.4) incl. literal P-I resonance algorithm; build B2 | P-I worked examples; 126 P-I special cases run; B2 built (≥ 900 residues) | algorithmically subtle |
+| M2 | Perception (5.2–5.4) incl. literal P-I resonance algorithm; build B2 | P-I worked examples; 126 P-I special cases run; B2 built (≥ 900 residues) | done (2026-10-29) |
 | M3 | Rule engine (5.5) + rule file v1 (5.6–5.7): Appendix A + port of pilot rules, then extend to B2 types | B1-train ≥ 99 %, B1-test ≥ 96 %, B2-train ≥ 98 %, B2-test ≥ 95 %, B3 100 %; rules changelog complete | bulk of the work: failure-driven loop |
 | M4 | Parameter DB + analogy engine (5.8–5.9) with a provisional matrix | M064 fixture analog reproduced; unit tests for TPS composition (inner ×10, bond groups, reversal) | — |
 | M5 | Penalty-matrix reconstruction (5.10) | leave-one-out on B4: same source ≥ 85 %, TPS within ±0.5 ≥ 80 % (provisional) | inverse problem |
