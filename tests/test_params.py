@@ -246,3 +246,30 @@ def test_pruned_search_equals_brute_force(engine, toppar):
                 res = eng.find(kind, prm.types, mode, accept)
                 score, src = brute_force(eng, kind, prm.types, mode, accept)
                 assert (res.source, res.penalty) == (src.types, round(score, 6)), (kind, prm.types, mode)
+
+
+# ---- M5: fitted model and B4 --------------------------------------------------------------------------------------
+
+def test_b4_split_is_reproducible(engine, root):
+    from open_cgenff.params import annotation_split
+    manifest = json.load(open(os.path.join(root, 'benchmarks', 'b4_annotations.split.json')))
+    assert annotation_split(engine.db) == manifest
+    assert len(manifest['train']) == 5787 and len(manifest['test']) == 1447
+
+
+def test_fitted_model_conventions(engine):
+    from open_cgenff.params.penalties import ALTNUM_TWINS, FALLBACK_SCALE
+    m = engine.model
+    for a, b in ALTNUM_TWINS:
+        assert m.bonded.cost(a, b) == 0.0 and m.nonbonded.cost(b, a) == 0.0
+    # unobserved substitutions are expensive (relation median x FALLBACK_SCALE)
+    assert FALLBACK_SCALE == 20.0 and min(m.nonbonded.fallback.values()) >= 20.0
+    assert m.bonded.cost('NG3P3', 'NG321') == 10.0                       # P-II Table 1 still wins
+
+
+def test_b4_pool_excludes_the_batch_era(engine):
+    from open_cgenff.benchmarks import b4
+    cases = {c.name: c for c in b4.build(engine.db)}
+    batch = next(c for c in cases.values() if c.batch and c.split == 'train')
+    res = b4.leave_one_out(engine, batch)
+    assert res is not None and not res.parameter.comment.startswith('aa,') and res.source != batch.types

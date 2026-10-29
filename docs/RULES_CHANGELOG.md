@@ -63,3 +63,11 @@ After M3: 895/904 (99.0 %), 220/226 (97.3 %), 720/728 (98.9 %), 178/182 (97.8 %)
     a ring N and an exocyclic N (2-aminopyrimidine type; 2300B7, CSGU); `typ NG2S3 … ne ( arom 6 ) impr` (230001).
     QI (molecules with exactly the reference improper centres, B1-train/test, B2-train/test): 467/108/407/103 →
     884/219/705/175. Typing unchanged: 895/220/720/178/34; QF unchanged.
+
+## M5: penalty model (2026-10-29)
+11. Default penalty model `fitted_model` (SPEC 5.10; `penalties_v5.rules` unchanged): learned from B4-train only;
+    altnum twins cost 0; multi-substitution annotations solved for 72 more elements; unobserved substitutions at
+    20 × the relation median. Motivating cases: B4-train failures where a candidate built from never-observed
+    substitutions beat the program's source (FINDINGS §10). B4 (same source / TPS ±0.5): provisional model
+    (train-only learning, batch-era pool) 76.3/81.0 % on a train sample → train 93.0/92.6 %, test 92.1/92.5 %.
+    B0 exact (M064 analog unchanged); B1/B2/B3 typing, QF and QI unchanged (no typing change).

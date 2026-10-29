@@ -8,7 +8,7 @@ analogy, CHARMM `.str` output. Read `docs/SPEC.md` before any work; it defines c
 ```
 bash scripts/fetch_data.sh                 # pinned CGenFF/CHARMM data into data/ (needed by tests)
 python -m pytest -q                        # must stay green
-python -m open_cgenff.benchmarks --check-floors   # B0/B1/B2/B3/QT/QF/QI report (production typer) -> build/report/
+python -m open_cgenff.benchmarks --check-floors   # B0/B1/B2/B3/B4/QT/QF/QI report (production typer) -> build/report/
 open-cgenff "CC(=O)Nc1ccc(Cl)cc1" -o x.str --json x.json --psf x.psf  # CLI (pip install -e ".[dev,export]" for OpenMM)
 python -m open_cgenff.benchmarks --sets B1,B2,B3 --typer prototype/typer_pilot.py   # pilot baseline
 bash scripts/import_pi_si.sh <ci300363c_si_001.zip>  # P-I SI special cases -> data/pi_si/ (local only)
@@ -26,7 +26,7 @@ python prototype/charges.py fixtures --toppar data/toppar_c36_releases/charmm/to
 - Never call the tool "CGenFF"; it is "CGenFF-compatible". Outputs must say they are not from the official program.
 - Benchmark hygiene: inspect per-molecule failures only on dev/train splits (B1-train, B2-train, B5-dev). For B1-test,
   B2-test and B5-test report aggregate metrics only. Never edit reference data to make a test pass.
-- Every typing or penalty-rule change: rerun B0/B1/B2/B3, no unexplained regressions, log it in
+- Every typing or penalty-rule change: rerun B0/B1/B2/B3 (+B4 for penalties), no unexplained regressions, log it in
   `docs/RULES_CHANGELOG.md` (rule, motivating molecules, metric delta).
 - `prototype/` is the frozen pilot baseline: do not import it from `src/`; port code instead. Production must beat the
   regression floors in `docs/SPEC.md` §7.4.

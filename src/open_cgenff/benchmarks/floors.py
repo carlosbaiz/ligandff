@@ -35,6 +35,11 @@ IMPROPER_FLOORS = {  # QI: (set, split) -> minimum number of molecules with all 
     ("B2", "test"): 175,
 }
 
+ANALOGY_FLOORS = {  # B4: (split) -> minimum (same source, TPS within 0.5) case counts (M5 fitted model)
+    "train": (5383, 5358),     # of 5,787
+    "test": (1333, 1338),      # of 1,447
+}
+
 # QT: the increment model's fit to the training charges (FINDINGS 2.2); a change means the engine or the data changed
 CHARGE_TRAINING = {"residues": 2255, "median_rmse": 0.0098}
 
@@ -57,6 +62,13 @@ def check(report):
             if m is None or m["correct"] < floor:
                 problems.append(f"QF-{name}-{split}: {m and m['correct']} molecules with correct formal charges "
                                 f"(floor {floor})")
+    b4 = report.get("B4")
+    if b4 is not None:
+        for split, (same, close) in ANALOGY_FLOORS.items():
+            m = b4["splits"].get(split)
+            if m is None or m["same_source"] < same or m["tps_within_0.5"] < close:
+                problems.append(f"B4-{split}: {m and m['same_source']} same source, {m and m['tps_within_0.5']} TPS "
+                                f"within 0.5 (floors {same}, {close})")
     qi = report.get("QI")
     if qi is not None:
         for (name, split), floor in IMPROPER_FLOORS.items():

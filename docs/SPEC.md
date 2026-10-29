@@ -270,7 +270,7 @@ bond, angle and dihedral is written in canonical orientation; the file is in col
   missing and the candidate parameter, add that group's penalty; ×10 for the central bond of a dihedral and for any bond
   of an angle or bond parameter. The first two groups count as equivalent. v0.9.6 groups: Appendix B.
 - Penalty interpretation printed in outputs: < 10 fair; 10–50 basic validation; > 50 extensive validation.
-Status: done (M4) with the provisional matrix of 5.10: `params/analogy.py` (`AnalogyEngine.find`/`tps`,
+Status: done (M4; since M5 with the fitted matrix of 5.10): `params/analogy.py` (`AnalogyEngine.find`/`tps`,
 `assign_parameters`, `charge_analogs`), `params/penalties.py` (rule parser, `BondGroups`, matrices). Decisions where
 P-II is silent (unverifiable without official outputs, D4): impropers are matched centre first with every order of the three outer atoms (exact
 lookup and analogy; the order as generated is tried first) instead of reversal; the search is exact but indexed by
@@ -301,6 +301,15 @@ bond-group difference (106 bonded, 260 nonbonded; the most frequent value); a fa
 the observed elements with the same relation: same family = element + `G` + next letter with 2/1/0 further common
 characters, same element, H types apart, different elements). Leave-one-out baseline on a 10 % sample of the
 annotations (725): same source 36 %, |ΔTPS| ≤ 0.5 46 % (FINDINGS §8); M5 starts from here.
+Status (M5, done): `params/penalties.py:fitted_model`, the default model of `default_engine`, learned from B4-train
+annotations only: the provisional model + altnum twins at 0 + elements solved from multi-substitution annotations
+(one unknown at a time, iterated) + unobserved substitutions at 20 × the relation median (the program never chose
+them, so they are expensive; B4-train grid 5/10/20/50). B4 leave-one-out with the batch-era candidate pool (7.1):
+B4-train 93.0 % same source / 92.6 % TPS within ±0.5; **B4-test 92.1 % / 92.5 %**. The hierarchical `pri/alt/up`
+reconstruction of steps 1 and 4 was not needed to reach the targets: the model stays a flat element table + relation
+fallback (plus the published NG3 hierarchy). Residual train failures: mostly altnum-twin ties where the program took
+the `…2` variant (e.g. bond CG2DC1–CG324 from CG2DC2–CG321) and analogs whose source is cheaper only under elements
+from other program versions.
 
 ### 5.11 Charges and charge penalties (P-II; verified exactly)
 - `q_i = q0_i − Σ_j β_ij`, extended: each bond parameter carries one increment, each angle two, each dihedral three.
@@ -378,7 +387,7 @@ compare energies. Coordinates: input coordinates (mol2/SDF) or an RDKit embeddin
 | B1 | RTF residues with SMILES: 1,130 molecules / 27,512 atoms after graph mapping and repair of 94 SMILES with lost bond orders (`prototype/build_rtf_benchmark.py`). Split 80/20, seed 42 (`benchmarks/b1_rtf_zinc.split.json`). All are v5.0 ZINC-derived training molecules; 126 types | done | train = development; test = semi-sealed (see 7.2) |
 | B2 | the 937 RTF residues without SMILES (original CGenFF model compounds). Bond orders from connectivity + net charge (RDKit DetermineBondOrders; IC tables not needed) → 910 molecules / 17,669 atoms (23 disconnected, 4 failed). Split 80/20 seed 42: `benchmarks/b2_rtf_legacy.split.json` (728/182). Adds 32 types absent from B1 (aromatic Cl/Br/I, aliphatic halogens, phosphates PG0/1/2, OG303/OG304, SG301, CG323, CG2O7/OG2D5, NG331, HGPAM3, CG3AM*/HGAAM*, B, Se, Al …). Since M3, charge separation produced by DetermineBondOrders along an alternating path (e.g. a thioester as `[S+]=C-[O-]`) is removed (14 residues; `b2.py:_neutralize`) | done (M2) | development (split 80/20 like B1) |
 | B3 | `benchmarks/charmm_gui_cpa/`: 34 CGenFF-typed species from CHARMM-GUI (CGenFF ≤ 4.6 era; 26 not in the reference set) | done | typing regression (must stay 100 %); charges only as version-drift reference |
-| B4 | annotated analogies in the parameter files (`from X, penalty= N`) | extract in M5 | fit/validate penalty matrix (leave-one-out) |
+| B4 | annotated analogies in `par_all36_cgenff.prm` (`from X, penalty= N`): 7,234 cases, split 80/20 seed 42 (`benchmarks/b4_annotations.split.json` = `params.annotation_split`); leave-one-out where batch cases (comment `aa,`, 6,952) search a pool without any `aa,` parameter (FINDINGS §10) | done (M5) | fit on train; test = aggregates only |
 | B5 | official CGenFF **5.0** outputs for diverse drug-like molecules | dropped (D4, 2026-10-29: not available, and not to be used for training) | B5-dev (30 %) for calibration of tie-breaks/LP/analogy; **B5-test (70 %) sealed** = definition of done |
 
 ### 7.2 Hygiene
@@ -402,7 +411,7 @@ Floors since M3 (ratchet on the production typer; lower one only with a justific
 B0 exact; B1-train ≥ 895/904, B1-test ≥ 220/226, B2-train ≥ 720/728, B2-test ≥ 178/182 molecules fully correct;
 B3 100 % (34/34); QT = 2,255 residues, median RMSE 0.0098 e (FINDINGS §2.2); QF ≥ 887/218/669/166 molecules with
 correct formal charges (B1-train/test, B2-train/test); QI ≥ 884/219/705/175 molecules with correct improper centres (since
-M4). Enforced as exact counts in
+M4); B4 same source ≥ 5,383/5,787 (train) and 1,333/1,447 (test), TPS within ±0.5 ≥ 5,358 and 1,338 (since M5). Enforced as exact counts in
 `src/open_cgenff/benchmarks/floors.py` and by CI (`.github/workflows/ci.yml`).
 
 ## 8. Milestones
@@ -414,7 +423,7 @@ M4). Enforced as exact counts in
 | M2 | Perception (5.2–5.4) incl. literal P-I resonance algorithm; build B2 | P-I worked examples; 126 P-I special cases run; B2 built (≥ 900 residues) | done (2026-10-29) |
 | M3 | Rule engine (5.5) + rule file v1 (5.6–5.7): Appendix A + port of pilot rules, then extend to B2 types | B1-train ≥ 99 %, B1-test ≥ 96 %, B2-train ≥ 98 %, B2-test ≥ 95 %, B3 100 %; rules changelog complete | done (2026-10-29): 99.0 / 97.3 / 98.9 / 97.8 / 100 %; QF formal charges 1,940/1,942 |
 | M4 | Parameter DB + analogy engine (5.8–5.9) with a provisional matrix | M064 fixture analog reproduced; unit tests for TPS composition (inner ×10, bond groups, reversal) | done (2026-10-29): M064 analog, param and charge penalties exact; impropers from rules (QI) |
-| M5 | Penalty-matrix reconstruction (5.10) | leave-one-out on B4: same source ≥ 85 %, TPS within ±0.5 ≥ 80 % (provisional) | inverse problem |
+| M5 | Penalty-matrix reconstruction (5.10) | leave-one-out on B4: same source ≥ 85 %, TPS within ±0.5 ≥ 80 % (provisional) | done (2026-10-29): B4-test 92.1 % / 92.5 % (train 93.0 / 92.6) |
 | M6 | Lone pairs (5.12), `.str`/JSON writers, CLI, OpenMM/GROMACS export | B3 molecules build in OpenMM; `.str` matches fixture layout | done (2026-10-29): 34/34 B3 and all 31 B1/B2 lone-pair molecules build in OpenMM; M064 `.str` provenance as in the SI |
 | M7 | Final validation on B0–B4 against section 1; report incl. the limits that follow from D4 | section 1 targets | — |
 

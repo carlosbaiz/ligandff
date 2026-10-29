@@ -207,3 +207,24 @@ Only B1-train/B2-train failures were inspected; test splits are aggregates.
   The CGenFF parameter file defines LPH with zero LJ. Pipeline on all 2,040 B1/B2 molecules: no crash, no typing
   error; 54 molecules need at least one analog parameter (training residues whose types we get wrong, or the
   linear-centre dihedrals of FINDINGS §8). ~0.5 s per molecule including the OpenMM build.
+
+## 10. Penalty matrix (M5)
+B4 = the 7,234 annotated parameters; split 80/20 (seed 42); only B4-train failures were inspected.
+- When were the analogies made? 6,952 annotations share a comment prefix `aa,` (one project). None of them has an
+  `aa,` parameter as its source, neither another annotated one nor any of the 11,900 fitted `aa,` parameters
+  (0 of 5,555 B4-train batch cases), although those are ~37 % of the file: the batch ran against the database before
+  that project. Leave-one-out must use that pool: with "everything but the case itself" the provisional model scores
+  36 % same source; excluding only annotated batch members 63 %; excluding every `aa,` parameter 76 %. Every
+  annotated source still exists in the file; 97 % of sources are non-annotated parameters.
+- Unobserved substitutions are expensive. With the provisional fallback (relation medians) most failures had the
+  program's source reproduced exactly while a candidate built from never-observed substitutions scored lower.
+  Fallback × 2/4/8/20 (sample of B4-train, old pool): 73/79/81/82 % same source; with the batch-era pool,
+  × 5/10/20/50: 91.8/92.4/93.0/93.2 %. Chosen: 20.
+- Altnum twins (CG2DC1/CG2DC2 etc.) substitute at zero cost: +1.4 % same source.
+- Ties: "first in collated order" (P-II) beats "last" (83.0 vs 78.1 % on a B4-train sample), although all 16 tied
+  failures had the program's source later in the file.
+- Multi-substitution annotations solved one unknown at a time add 72 elements (63 + 9 in two rounds): small effect
+  on the source choice, +0.6 % TPS agreement.
+- Result (`fitted_model`, learned from B4-train only): train 93.0 % same source, 92.6 % TPS within ±0.5, 90.4 % both;
+  test 92.1 %, 92.5 %, 89.4 %. Per kind (train): bonds 90/98 %, angles 91/93 %, dihedrals 94/92 %, impropers 97/98 %.
+  M064 is still reproduced exactly. Full B4 run: 23 s on 14 cores.

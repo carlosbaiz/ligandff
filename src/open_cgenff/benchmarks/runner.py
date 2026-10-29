@@ -1,9 +1,10 @@
 """Benchmark runner: scores typing and charges on B0/B1/B2/B3 and writes JSON + markdown reports (SPEC 7.3).
 Set QT is the charge formula check on the training residues (FINDINGS 2.2); set QF checks the production typing-rule
 formal charges against the charges implied by the B1/B2 reference residues (SPEC 5.7); set QI checks the improper
-centres from typing-rule `impr` actions against the IMPR lines of those residues (SPEC 5.13).
+centres from typing-rule `impr` actions against the IMPR lines of those residues (SPEC 5.13); set B4 is the
+leave-one-out test of the analogy search on the program's own analogies recorded in the parameter file (SPEC 5.10).
 
-usage: python -m open_cgenff.benchmarks [--sets B0,B1,B2,B3,QT,QF,QI] [--typer FILE] [--charge-engine FILE]
+usage: python -m open_cgenff.benchmarks [--sets B0,B1,B2,B3,B4,QT,QF,QI] [--typer FILE] [--charge-engine FILE]
                                         [--toppar DIR] [--out DIR] [--check-floors]
 Hygiene (SPEC 7.2): confusion pairs and per-molecule failures are reported for development splits only.
 """
@@ -17,13 +18,13 @@ from pathlib import Path
 from .. import banner
 from ..charges import IncrementTable, assign_charges, training_check
 from ..paths import REPO_ROOT, TOPOLOGY_FILE, INCREMENTS_FILE, toppar_dir
-from . import b0, b1, b2, b3, floors, qf, qi
+from . import b0, b1, b2, b3, b4, floors, qf, qi
 from .common import load_typer
 from .scoring import score_typing
 
 PRODUCTION_TYPER = "open_cgenff.typing"
 DEFAULT_TYPER = PRODUCTION_TYPER
-DEFAULT_SETS = ("B0", "B1", "B2", "B3", "QT", "QF", "QI")
+DEFAULT_SETS = ("B0", "B1", "B2", "B3", "B4", "QT", "QF", "QI")
 PRODUCTION = "open_cgenff.charges"
 PILOT_TYPER = REPO_ROOT / "prototype" / "typer_pilot.py"            # frozen baseline (SPEC 7.4)
 
@@ -85,6 +86,10 @@ def run(sets=DEFAULT_SETS, typer=DEFAULT_TYPER, charge_engine=PRODUCTION, toppar
         cases, excluded = b3.build()
         report["B3"] = {"build": {"molecules": len(cases), "excluded": excluded},
                         "typing": score_typing(cases, type_molecule, n_confusions)}
+    if "B4" in sets:
+        from ..params import default_engine
+        engine = default_engine(toppar)
+        report["B4"] = b4.score(engine, b4.build(engine.db), n_examples=n_confusions)
     report["floor_violations"] = floors.check(report)
     return report
 
@@ -161,6 +166,19 @@ def to_markdown(report, confusions=True):
             out += ["Mismatches, development splits:", "", "| set | centre type | kind | count | example |",
                     "|---|---|---|---|---|"]
             out += [f"| {n} | {x['type']} | {x['kind']} | {x['count']} | {x['example']} |" for n, x in rows]
+            out.append("")
+    if "B4" in report:
+        out += ["## B4: analogy search, leave-one-out on the program's recorded analogies (SPEC 5.10)", "",
+                "| split | cases | same source | TPS within 0.5 | both |", "|---|---|---|---|---|"]
+        for split, m in sorted(report["B4"]["splits"].items()):
+            out.append(f"| {split} | {m['cases']} | {m['same_source_fraction']:.1%} | "
+                       f"{m['tps_within_0.5_fraction']:.1%} | {m['both_fraction']:.1%} |")
+        out.append("")
+        if confusions and report["B4"]["examples"]:
+            out += ["Failures, B4-train:", "", "| missing | program's source | found |", "|---|---|---|"]
+            out += [f"| {x['case']} | {x['reference'][0]} ({x['reference'][1]}) | "
+                    f"{x['found'][0] + ' (' + str(x['found'][1]) + ')' if x['found'] else '-'} |"
+                    for x in report["B4"]["examples"]]
             out.append("")
     v = report["floor_violations"]
     out += ["## Regression floors (SPEC 7.4)", "", "all met" if not v else "\n".join(f"- FAIL: {x}" for x in v), ""]

@@ -10,4 +10,6 @@ Definitions, status and hygiene rules: `docs/SPEC.md` §7. Builders and runner: 
   B2-test is sealed.
 - `plugins/` – typer plug-ins for the runner (`--typer FILE`; default is the production typer `open_cgenff.typing`),
   e.g. the pilot typer on production perception.
+- `b4_annotations.split.json` – B4 (annotated analogies of the parameter file; M5) train/test membership, reproducible
+  with `open_cgenff.params.annotation_split`. B4-test is sealed (aggregates only).
 - B5 (official CGenFF 5.0 outputs) was dropped (SPEC D4): no official program outputs are used.
