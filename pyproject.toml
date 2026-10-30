@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "open-cgenff"            # working name; see docs/SPEC.md section 11 (naming is an open decision)
+name = "ligandff"            # LigandFF (SPEC D1, decided 2026-10-30)
 version = "0.1.0.dev0"
 description = "Open-source, CGenFF-compatible atom typing and parameter/charge assignment (clean-room reimplementation)"
 requires-python = ">=3.10"
@@ -14,15 +14,15 @@ dev = ["pytest>=8"]
 export = ["openmm>=8.0", "parmed>=4.2"]
 
 [project.scripts]
-open-cgenff-bench = "open_cgenff.benchmarks.runner:main"
-open-cgenff = "open_cgenff.cli:main"
+ligandff-bench = "ligandff.benchmarks.runner:main"
+ligandff = "ligandff.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-"open_cgenff.typing" = ["rules/*.rules"]
-"open_cgenff.params" = ["rules/*.rules"]
+"ligandff.typing" = ["rules/*.rules"]
+"ligandff.params" = ["rules/*.rules"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

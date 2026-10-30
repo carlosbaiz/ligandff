@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      OPEN_CGENFF_REQUIRE_DATA: "1"   # missing CGenFF data must fail the run, not skip tests
+      LIGANDFF_REQUIRE_DATA: "1"   # missing CGenFF data must fail the run, not skip tests
     steps:
       - uses: actions/checkout@v4
 
@@ -37,7 +37,7 @@ jobs:
 
       # All sets incl. OUT (OpenMM build of every B1/B2/B3 molecule); fails on a floor or a SPEC section 1 target
       - name: Validation (benchmarks, regression floors, definition of done)
-        run: python -m open_cgenff.benchmarks.validation --out build/report
+        run: python -m ligandff.benchmarks.validation --out build/report
 
       - name: Upload benchmark report
         if: always()

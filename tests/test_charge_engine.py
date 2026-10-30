@@ -3,12 +3,12 @@ import math, os, random
 import pytest
 
 import charges as proto                                  # prototype/charges.py (reference baseline)
-from open_cgenff.benchmarks import b0
-from open_cgenff.charges import (Analog, IncrementTable, assign_charges, atom_penalty, charge_molecule,
+from ligandff.benchmarks import b0
+from ligandff.charges import (Analog, IncrementTable, assign_charges, atom_penalty, charge_molecule,
                                  parameter_instances, training_check)
-from open_cgenff.io.prm import read_increments
-from open_cgenff.io.rtf import read_rtf
-from open_cgenff.molecule import TypedMolecule
+from ligandff.io.prm import read_increments
+from ligandff.io.rtf import read_rtf
+from ligandff.molecule import TypedMolecule
 
 
 @pytest.fixture(scope='session')

@@ -4,12 +4,12 @@ import os
 
 import pytest
 
-from open_cgenff.charges import IncrementTable, charge_molecule
-from open_cgenff.molecule import TypedMolecule
-from open_cgenff.params import (AnalogyEngine, BondGroups, ParameterDatabase, PenaltyModel, PenaltyRuleError,
+from ligandff.charges import IncrementTable, charge_molecule
+from ligandff.molecule import TypedMolecule
+from ligandff.params import (AnalogyEngine, BondGroups, ParameterDatabase, PenaltyModel, PenaltyRuleError,
                                 PenaltyRules, SubstitutionMatrix, assign_parameters, charge_analogs, default_engine,
                                 parse_penalty_rules)
-from open_cgenff.params.penalties import BondGroup
+from ligandff.params.penalties import BondGroup
 
 FIXTURES = os.path.join(os.path.dirname(__file__), 'fixtures')
 
@@ -207,8 +207,8 @@ def test_si_fixture_analogs_penalties_and_charges(engine, toppar, name):
 
 def test_typed_molecule_gets_improper_parameters(engine):
     from rdkit import Chem
-    from open_cgenff.molecule import InputMolecule
-    from open_cgenff.typing import type_molecule
+    from ligandff.molecule import InputMolecule
+    from ligandff.typing import type_molecule
     tm = type_molecule(InputMolecule.from_rdkit(Chem.AddHs(Chem.MolFromSmiles('CC(=O)NC'))))
     asg = assign_parameters(tm, engine)
     imps = [p for p in asg.parameters if p.kind == 'improper']
@@ -232,7 +232,7 @@ def brute_force(engine, kind, types, mode='bonded', accept=None):
 
 def test_pruned_search_equals_brute_force(engine, toppar):
     """Leave-one-out on annotated parameters of each kind: the indexed search returns what a full scan returns."""
-    from open_cgenff.params.analogy import _increment_filter
+    from ligandff.params.analogy import _increment_filter
     table = IncrementTable.from_toppar(toppar)
     picks = {'bond': 2, 'angle': 2, 'dihedral': 2, 'improper': 2}
     for kind, n in picks.items():
@@ -251,14 +251,14 @@ def test_pruned_search_equals_brute_force(engine, toppar):
 # ---- M5: fitted model and B4 --------------------------------------------------------------------------------------
 
 def test_b4_split_is_reproducible(engine, root):
-    from open_cgenff.params import annotation_split
+    from ligandff.params import annotation_split
     manifest = json.load(open(os.path.join(root, 'benchmarks', 'b4_annotations.split.json')))
     assert annotation_split(engine.db) == manifest
     assert len(manifest['train']) == 5787 and len(manifest['test']) == 1447
 
 
 def test_fitted_model_conventions(engine):
-    from open_cgenff.params.penalties import ALTNUM_TWINS, FALLBACK_SCALE
+    from ligandff.params.penalties import ALTNUM_TWINS, FALLBACK_SCALE
     m = engine.model
     for a, b in ALTNUM_TWINS:
         assert m.bonded.cost(a, b) == 0.0 and m.nonbonded.cost(b, a) == 0.0
@@ -268,7 +268,7 @@ def test_fitted_model_conventions(engine):
 
 
 def test_b4_pool_excludes_the_batch_era(engine):
-    from open_cgenff.benchmarks import b4
+    from ligandff.benchmarks import b4
     cases = {c.name: c for c in b4.build(engine.db)}
     batch = next(c for c in cases.values() if c.batch and c.split == 'train')
     res = b4.leave_one_out(engine, batch)

@@ -1,6 +1,6 @@
 """Atom typing (SPEC 5.5-5.7): the P-I rule language and the rule file.
 
-    from open_cgenff.typing import type_molecule
+    from ligandff.typing import type_molecule
     tm = type_molecule(InputMolecule.from_rdkit(mol))    # TypedMolecule: types, typing-rule formal charges, impropers
 """
 from functools import lru_cache

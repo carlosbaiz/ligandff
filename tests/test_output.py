@@ -4,11 +4,11 @@ import math
 
 import pytest
 
-from open_cgenff import banner
-from open_cgenff.cli import main as cli_main
-from open_cgenff.io.stream import to_report, to_str
-from open_cgenff.lonepairs import LP_DISTANCE, apply_lone_pair_charges, lone_pairs
-from open_cgenff.pipeline import parameterize, parameterize_typed, read_molecule
+from ligandff import banner
+from ligandff.cli import main as cli_main
+from ligandff.io.stream import to_report, to_str
+from ligandff.lonepairs import LP_DISTANCE, apply_lone_pair_charges, lone_pairs
+from ligandff.pipeline import parameterize, parameterize_typed, read_molecule
 from test_params import load_fixture
 
 
@@ -69,7 +69,7 @@ def test_pipeline_from_smiles_with_lone_pair(toppar):
 
 def test_openmm_system_with_lone_pair(toppar):
     openmm = pytest.importorskip('openmm')
-    from open_cgenff.export import openmm_system, potential_energy
+    from ligandff.export import openmm_system, potential_energy
     r = parameterize(read_molecule('Clc1ccc(cc1)C(=O)NC', 'CLB'), toppar=toppar)
     system, psf, pos = openmm_system(r, toppar)
     n = len(r.atoms) + 1
@@ -86,9 +86,9 @@ def test_openmm_system_with_lone_pair(toppar):
 def test_b3_molecules_build_in_openmm(toppar):
     """M6 acceptance: every B3 molecule goes through the pipeline and builds an OpenMM system."""
     pytest.importorskip('openmm')
-    from open_cgenff.benchmarks import b3
-    from open_cgenff.export import openmm_system, potential_energy
-    from open_cgenff.molecule import InputMolecule
+    from ligandff.benchmarks import b3
+    from ligandff.export import openmm_system, potential_energy
+    from ligandff.molecule import InputMolecule
     cases, _ = b3.build()
     assert len(cases) == 34
     for c in cases:
@@ -115,7 +115,7 @@ def test_cli_writes_stream_json_and_psf(toppar, tmp_path, capsys):
 def test_gromacs_export(toppar, tmp_path):
     pytest.importorskip('openmm')
     pytest.importorskip('parmed')
-    from open_cgenff.export import write_gromacs
+    from ligandff.export import write_gromacs
     r = parameterize(read_molecule('Fc1ccccc1C(=O)O', 'FBA'), toppar=toppar)
     top, gro = write_gromacs(r, str(tmp_path / 'fba'), toppar)
     assert 'FGR1' in open(top).read() and len(open(gro).read().splitlines()) == len(r.atoms) + 3
@@ -136,7 +136,7 @@ def test_linear_centre_dihedrals_omitted(toppar):
 
 def test_coordinates_from_input_bond_orders(toppar):
     """Embedding uses the input molecule: rule formal charges (P- in phosphates) would fail as single bonds."""
-    from open_cgenff.export import coordinates
+    from ligandff.export import coordinates
     r = parameterize(read_molecule('COP(=O)([O-])[O-]', 'MP'), toppar=toppar)
     assert r.coords is None and r.source is not None
     assert len(coordinates(r, toppar)) == len(r.atoms)
@@ -144,8 +144,8 @@ def test_coordinates_from_input_bond_orders(toppar):
 
 def test_output_check_one_molecule(toppar):
     pytest.importorskip('openmm')
-    from open_cgenff.benchmarks import b3
-    from open_cgenff.benchmarks.out import check_molecule
+    from ligandff.benchmarks import b3
+    from ligandff.benchmarks.out import check_molecule
     case = next(c for c in b3.build()[0] if c.name == 'MSCN')
     row = check_molecule(case, toppar)
     assert row['built'] and row['finite'] and not row['errors'] and row['param_penalty'] < 10

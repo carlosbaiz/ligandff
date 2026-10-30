@@ -1,6 +1,6 @@
 # B2: legacy RTF model compounds (no SMILES in the RTF)
 
-Built by `src/open_cgenff/benchmarks/b2.py` from `top_all36_cgenff.rtf`; only residue names are stored here
+Built by `src/ligandff/benchmarks/b2.py` from `top_all36_cgenff.rtf`; only residue names are stored here
 (`b2_rtf_legacy.split.json`, 728 train / 182 test, seed 42). B2-test is sealed: aggregate metrics only.
 
 Input quality (bond orders come from RDKit DetermineBondOrders on connectivity + net charge, not from the RTF);

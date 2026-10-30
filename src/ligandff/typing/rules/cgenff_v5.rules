@@ -1,7 +1,7 @@
 # CGenFF-compatible typing rules, v1 (SPEC 5.5-5.7). Not the official CGenFF rule file (unpublished); reconstructed
 # from P-I (Fig. 5, Appendix A of docs/SPEC.md), the RTF MASS-line type descriptions, the pilot typer
 # (prototype/typer_pilot.py) and the train splits of B1/B2. Every change is logged in docs/RULES_CHANGELOG.md.
-# Language: src/open_cgenff/typing/rules.py. First matching rule wins: keep specific rules first.
+# Language: src/ligandff/typing/rules.py. First matching rule wins: keep specific rules first.
 
 # ---------------------------------------------------------------- macros (shared predicates)
 def het      ( or ( el N ) ( el O ) ( el S ) ( el P ) )

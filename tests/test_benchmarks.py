@@ -3,7 +3,7 @@ import json, os, pickle, subprocess, sys
 import pytest
 from rdkit import Chem
 
-from open_cgenff.benchmarks import b0, b1, b3, floors, runner
+from ligandff.benchmarks import b0, b1, b3, floors, runner
 
 
 @pytest.fixture(scope='session')

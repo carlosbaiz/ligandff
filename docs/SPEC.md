@@ -47,7 +47,7 @@ meaning as a warning, not as a guarantee of agreement with the official program.
 
 ### 2.2 Naming
 - Do not call the tool "CGenFF" (P-Orr asks that the name be reserved for the official program + current parameters).
-  Use "CGenFF-compatible". The repository's working name `open-cgenff` is a placeholder (decision D1).
+  Use "CGenFF-compatible". The tool is named LigandFF (package and command `ligandff`; D1, decided 2026-10-30).
 - Every output file states: tool name + version, the CGenFF parameter version it targets (5.0), and that it is not
   the official CGenFF program.
 
@@ -92,7 +92,7 @@ Plus a machine-readable JSON report (types, charges, penalties, parameter proven
 ## 4. Architecture
 
 ```
-src/open_cgenff/       (package name follows the working name; rename with D1)
+src/ligandff/       (LigandFF; D1)
   io/          mol2 reader (sdf/SMILES via RDKit + InputMolecule.from_rdkit); RTF/PRM readers (incl. the !<% ... %>! increments field); .str + JSON writers
   perception/  rings.py (5.2), resonance.py (5.3), aromaticity.py (5.4); perceive() -> Perception
   typing/      engine.py (P-I rule language interpreter, 5.5); rules/cgenff_v5.rules (5.6)
@@ -103,7 +103,7 @@ src/open_cgenff/       (package name follows the working name; rename with D1)
   cli.py
   benchmarks/  B0/B1/B2/B3 builders, QF formal-charge and QI improper checks, scoring, runner producing JSON/markdown
                reports (section 7);
-               `python -m open_cgenff.benchmarks --check-floors`
+               `python -m ligandff.benchmarks --check-floors`
 benchmarks/plugins/  typer plug-ins outside src/ (e.g. the pilot typer on production perception)
 benchmarks/    benchmark data and split manifests
 prototype/     pilot code (reference only; not imported by src/)
@@ -202,7 +202,7 @@ Optional actions: `charge <n>` (formal charge used by charge assignment), `impr`
 `warn "<msg>"`, `err "<msg>"` (fatal), `altnum` (replace `?` in the type by 1/2 so that in a conjugated chain
 double-bonded atoms share a symbol and single-bonded neighbours alternate; the 1↔2 choice is arbitrary and
 parameter-symmetric).
-Status: done (M3): `src/open_cgenff/typing/` (`rules.py` parser, `engine.py` interpreter). Decision: implement this
+Status: done (M3): `src/ligandff/typing/` (`rules.py` parser, `engine.py` interpreter). Decision: implement this
 language exactly (it is published, fully specified, and matches CGenFF's ad-hoc type design); express all rules in it.
 Semantics fixed where P-I is silent (interpretations, FINDINGS §7):
 - inside a group evaluated on a neighbour, nested `ne` does not go back over the bond just traversed. Evidence: P-I's
@@ -226,7 +226,7 @@ type descriptions in `top_all36_cgenff.rtf`, the pilot rules (`prototype/typer_p
 learned from B1-train), and the reference molecules (B1, B2). Notable conventions found so far are listed in
 `docs/FINDINGS.md` §3.3 and §7. Work type-family by type-family; keep rules ordered most-specific-first; log every change
 (section 10).
-Status: rule file v1 done (M3): `src/open_cgenff/typing/rules/cgenff_v5.rules` (port of the pilot, P-I's `NG2R62`, and
+Status: rule file v1 done (M3): `src/ligandff/typing/rules/cgenff_v5.rules` (port of the pilot, P-I's `NG2R62`, and
 data-driven rules logged in `docs/RULES_CHANGELOG.md`). B1-train 895/904 (99.0 %), B1-test 220/226 (97.3 %), B2-train 720/728
 (98.9 %), B2-test 178/182 (97.8 %), B3 34/34.
 Accept: section 7 targets (M3: met).
@@ -243,7 +243,7 @@ P-v5 mentions undocumented "specific rules … resetting the formal charges" to 
 and prediction: expect a few special cases (unexplained so far: 23012O, C=O carbon −1 / O +1; C34H).
 Accept: for every B1/B2 molecule whose increments are complete, q0 from the rules equals round(q_ref − q_increments).
 Status: runner set QF, on molecules without lone pairs, with complete increments and all types correct: B1-train
-887/888, B1-test 218/218, B2-train 669/670, B2-test 166/166 (`src/open_cgenff/benchmarks/qf.py`).
+887/888, B1-test 218/218, B2-train 669/670, B2-test 166/166 (`src/ligandff/benchmarks/qf.py`).
 
 ### 5.8 Parameter database
 Read `par_all36_cgenff.prm` (v5.0, aligned) for parameter values and `par_all36_cgenff_increments.prm` for charge
@@ -326,7 +326,7 @@ from other program versions.
 - Training (only needed to extend CGenFF; increments are published): three-stage restrained least squares
   (bonds → angles → dihedrals; restraint k = 10⁻³ in 2012; P-v5 scanned 42 values from 10⁻⁴ to 5×10⁻¹⁷ and kept the
   model best correlated with the previous version), rounding to 0.001 e, constraints of P-II Table S1.
-Status: production engine `open_cgenff.charges` (M1; API `IncrementTable`, `assign_charges`, `charge_molecule`,
+Status: production engine `ligandff.charges` (M1; API `IncrementTable`, `assign_charges`, `charge_molecule`,
 `Analog`) reproduces program 5.0 output exactly on B0 and is identical to `prototype/charges.py` on all training
 residues. Since M4, `params.charge_analogs` supplies the analogs: nonbonded matrix at every position with the bonded
 search's position weights and bond groups (P-II names only the matrix), candidates restricted to parameters with
@@ -360,7 +360,7 @@ Status: done (M6): `pipeline.py` (`read_molecule`, `parameterize`, `parameterize
 the section 3 layout + JSON report), `io/psf.py` (PSF with NUMLP lone pairs), `export.py` (OpenMM through
 `CharmmPsfFile` + `CharmmParameterSet(top_all36_cgenff.rtf, par_all36_cgenff.prm, our .str)`; GROMACS `.top/.gro`
 through ParmEd's CHARMM readers from the same files, molecules without lone pairs only: ParmEd does not convert CHARMM lone pairs, so
-for halogenated aromatics the `.str` goes through `cgenff_charmm2gmx`), `cli.py` (`open-cgenff INPUT -o x.str --json --psf --gromacs`). All 34 B3 molecules
+for halogenated aromatics the `.str` goes through `cgenff_charmm2gmx`), `cli.py` (`ligandff INPUT -o x.str --json --psf --gromacs`). All 34 B3 molecules
 and all 2,040 B1/B2 molecules run through the pipeline without typing errors; every B3 molecule and every B1/B2
 molecule with lone pairs (31) builds an OpenMM system with the virtual site on the C–X axis (tests); since M7 every
 B1/B2/B3 molecule does (set OUT, 2,074/2,074). The analog lines
@@ -417,8 +417,8 @@ B3 100 % (34/34); QT = 2,255 residues, median RMSE 0.0098 e (FINDINGS §2.2); QF
 correct formal charges (B1-train/test, B2-train/test); QI ≥ 884/219/705/175 molecules with correct improper centres (since
 M4); B4 same source ≥ 5,383/5,787 (train) and 1,333/1,447 (test), TPS within ±0.5 ≥ 5,358 and 1,338 (since M5); OUT:
 every B1/B2/B3 molecule builds an OpenMM system (since M7). The section 1 targets themselves are checked by
-`python -m open_cgenff.benchmarks.validation` (CI). Enforced as exact counts in
-`src/open_cgenff/benchmarks/floors.py` and by CI (`.github/workflows/ci.yml`).
+`python -m ligandff.benchmarks.validation` (CI). Enforced as exact counts in
+`src/ligandff/benchmarks/floors.py` and by CI (`.github/workflows/ci.yml`).
 
 ## 8. Milestones
 
@@ -456,7 +456,7 @@ for M2 (literal port of the backtracking resonance algorithm) and M5 (matrix inf
 - Commit small; one milestone per branch/PR; update this spec when a decision changes.
 
 ## 11. Open decisions (owner: Carlos)
-- **D1 name** (avoid implying it is CGenFF). **D2 license** (permissive, e.g. BSD-3/MIT, recommended for adoption;
+- **D1 name** decided 2026-10-30: LigandFF (`ligandff`), described as "CGenFF-compatible"; trademark/literature check still to do. **D2 license** (permissive, e.g. BSD-3/MIT, recommended for adoption;
   note `lsfitpar` is AGPL: do not copy code from it). **D3** contact the MacKerell lab (data, blessing)?
   **D4** decided 2026-10-29: no official program outputs (no SilcsBio access; not to be used for training); B5 dropped. **D5** repository hosting (private GitHub until D1/D2;
   avoid running git inside OneDrive).

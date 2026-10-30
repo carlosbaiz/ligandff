@@ -5,7 +5,7 @@ centres from typing-rule `impr` actions against the IMPR lines of those residues
 leave-one-out test of the analogy search on the program's own analogies recorded in the parameter file (SPEC 5.10);
 set OUT (not run by default, needs OpenMM) builds an OpenMM system from the output of every B1/B2/B3 molecule.
 
-usage: python -m open_cgenff.benchmarks [--sets B0,B1,B2,B3,B4,QT,QF,QI[,OUT]] [--typer FILE] [--charge-engine FILE]
+usage: python -m ligandff.benchmarks [--sets B0,B1,B2,B3,B4,QT,QF,QI[,OUT]] [--typer FILE] [--charge-engine FILE]
                                         [--toppar DIR] [--out DIR] [--check-floors]
 Hygiene (SPEC 7.2): confusion pairs and per-molecule failures are reported for development splits only.
 """
@@ -24,10 +24,10 @@ from . import out as output
 from .common import load_typer
 from .scoring import score_typing
 
-PRODUCTION_TYPER = "open_cgenff.typing"
+PRODUCTION_TYPER = "ligandff.typing"
 DEFAULT_TYPER = PRODUCTION_TYPER
 DEFAULT_SETS = ("B0", "B1", "B2", "B3", "B4", "QT", "QF", "QI")
-PRODUCTION = "open_cgenff.charges"
+PRODUCTION = "ligandff.charges"
 PILOT_TYPER = REPO_ROOT / "prototype" / "typer_pilot.py"            # frozen baseline (SPEC 7.4)
 
 

@@ -4,9 +4,9 @@ import os
 import pytest
 from rdkit import Chem
 
-from open_cgenff.molecule import InputMolecule
-from open_cgenff.perception import perceive
-from open_cgenff.typing import (RULES_FILE, RuleSet, RuleSyntaxError, TypingError, default_rules, parse,
+from ligandff.molecule import InputMolecule
+from ligandff.perception import perceive
+from ligandff.typing import (RULES_FILE, RuleSet, RuleSyntaxError, TypingError, default_rules, parse,
                                 type_molecule, type_perception)
 
 FIXTURES = os.path.join(os.path.dirname(__file__), 'fixtures')

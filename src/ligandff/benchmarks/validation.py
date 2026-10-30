@@ -1,6 +1,6 @@
 """Final validation (M7): the definition of done of SPEC section 1, checked on a benchmark report.
 
-usage: python -m open_cgenff.benchmarks.validation [--toppar DIR] [--out DIR]
+usage: python -m ligandff.benchmarks.validation [--toppar DIR] [--out DIR]
 Runs every set (B0, B1, B2, B3, B4, QT, QF, QI, OUT; OUT needs OpenMM), writes report.json/report.md and
 validation.md (one row per target) to --out, and exits 1 if a target is missed. Test splits: aggregates only.
 """

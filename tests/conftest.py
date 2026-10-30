@@ -10,7 +10,7 @@ TOPPAR = os.path.join(ROOT, 'data', 'toppar_c36_releases', 'charmm', 'toppar', '
 @pytest.fixture(scope='session')
 def toppar():
     if not os.path.exists(os.path.join(TOPPAR, 'par_all36_cgenff_increments.prm')):
-        if os.environ.get('OPEN_CGENFF_REQUIRE_DATA'):    # set in CI: missing data must fail, not skip
+        if os.environ.get('LIGANDFF_REQUIRE_DATA'):    # set in CI: missing data must fail, not skip
             pytest.fail('CGenFF data not fetched: run scripts/fetch_data.sh')
         pytest.skip('CGenFF data not fetched: run scripts/fetch_data.sh')
     return TOPPAR

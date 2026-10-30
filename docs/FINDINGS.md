@@ -108,7 +108,7 @@ All benchmarks run in seconds on one CPU core (RDKit). Projected cost of complet
 agent loop: ~150–400 refinement rounds, ~30–160 M input tokens (mostly cache reads) + 1–4 M output tokens.
 
 ## 6. Perception (M2)
-Production perception (`src/open_cgenff/perception/`) on the P-I material and the pilot typer:
+Production perception (`src/ligandff/perception/`) on the P-I material and the pilot typer:
 - P-I worked examples reproduced exactly: Fig. 4 yields structures H, I, J with scores 12, 11, 11 in that order and
   keeps I; pyridinium yields two structures scoring 6 with the pre-0.9.7 coefficients (as printed in case study 1)
   and 11 with the current ones. The choice order (lowest-index neighbour, double before single, neutral before
@@ -127,7 +127,7 @@ Production perception (`src/open_cgenff/perception/`) on the P-I material and th
   form): see `benchmarks/b2_rtf_legacy.NOTES.md`.
 
 ## 7. Typing rules (M3)
-Production typer = P-I rule language (`src/open_cgenff/typing/`) + rule file v1 (`typing/rules/cgenff_v5.rules`).
+Production typer = P-I rule language (`src/ligandff/typing/`) + rule file v1 (`typing/rules/cgenff_v5.rules`).
 Only B1-train/B2-train failures were inspected; test splits are aggregates.
 - Port: the pilot rewritten in the rule language reproduces the pilot on production perception atom for atom on
   B1/B2-train (873/627), after one interpretation was fixed: nested `ne` must not revisit the atom it came from.
@@ -165,7 +165,7 @@ Only B1-train/B2-train failures were inspected; test splits are aggregates.
   and a −1 atom. Pilot baseline on the rebuilt B2: 633/728 train, 161/182 test (was 625/158).
 
 ## 8. Parameters by analogy (M4)
-`src/open_cgenff/params/` on `par_all36_cgenff.prm` (v5.0): 1,305 bonds, 6,776 angles (721 with Urey–Bradley),
+`src/ligandff/params/` on `par_all36_cgenff.prm` (v5.0): 1,305 bonds, 6,776 angles (721 with Urey–Bradley),
 19,629 dihedrals (29,044 lines; up to 6 terms), 489 impropers; 7,234 `from …, penalty=` annotations.
 - Ordering: the header's rules (element priority C < N < O < P < S < halogens < misc < H, alphabetical within an
   element; section sort keys bonds 1,2 / angles 2,1,3 / dihedrals 2,3,1,4 / impropers 1,4,2,3) reproduce the file:

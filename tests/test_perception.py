@@ -3,9 +3,9 @@ import glob, os
 import pytest
 from rdkit import Chem
 
-from open_cgenff.io.mol2 import read_mol2
-from open_cgenff.molecule import AROMATIC as AR, InputMolecule
-from open_cgenff.perception import COEFFICIENTS_PRE_097, find_rings, perceive, resolve
+from ligandff.io.mol2 import read_mol2
+from ligandff.molecule import AROMATIC as AR, InputMolecule
+from ligandff.perception import COEFFICIENTS_PRE_097, find_rings, perceive, resolve
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SPECIAL = os.path.join(ROOT, 'data', 'pi_si', 'specialcases')
@@ -167,7 +167,7 @@ def test_special_cases_quinolinium_and_spiro(special_cases):
 # ---- benchmarks: B2 and the pilot typer on production perception -------------------------------------------------
 
 def test_b2_build(toppar):
-    from open_cgenff.benchmarks import b1, b2
+    from ligandff.benchmarks import b1, b2
     cases, stats = b2.build(os.path.join(toppar, 'top_all36_cgenff.rtf'))
     assert stats['molecules'] == 910 and {c.split for c in cases} == {'train', 'test'}
     b1_types = {t for c in b1.build(os.path.join(toppar, 'top_all36_cgenff.rtf'))[0] for t in c.types}
@@ -177,7 +177,7 @@ def test_b2_build(toppar):
 def test_pilot_typer_on_production_perception(toppar):
     """SPEC 5.3: pilot results with production perception (B1-train -1 / B1-test +1 molecule vs the pilot's own
     perception, all explained in FINDINGS 6); aggregate counts only for test splits."""
-    from open_cgenff.benchmarks import runner
+    from ligandff.benchmarks import runner
     report = runner.run(['B1', 'B2', 'B3'], typer=os.path.join(ROOT, 'benchmarks', 'plugins',
                                                                'pilot_on_production_perception.py'), toppar=toppar)
     got = {(s, sp): m['molecules_correct'] for s in ('B1', 'B2', 'B3') for sp, m in report[s]['typing'].items()}

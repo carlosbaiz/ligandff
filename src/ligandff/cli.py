@@ -1,6 +1,6 @@
 """Command line: CGenFF-compatible parameters for one molecule (not the official CGenFF program).
 
-usage: open-cgenff INPUT [-o OUT.str] [--json OUT.json] [--name RESI] [--psf OUT.psf] [--gromacs PREFIX]
+usage: ligandff INPUT [-o OUT.str] [--json OUT.json] [--name RESI] [--psf OUT.psf] [--gromacs PREFIX]
                          [--toppar DIR]
 INPUT: a .mol2/.sdf/.mol file with all hydrogens and bond orders, or a SMILES string (hydrogens added).
 Without -o the stream file is printed to standard output. Exit code 1 if typing reported errors.
@@ -14,7 +14,7 @@ from .pipeline import parameterize, read_molecule
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(prog="open-cgenff", description=__doc__,
+    ap = argparse.ArgumentParser(prog="ligandff", description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("input", help="mol2/sdf/mol file or SMILES string")
     ap.add_argument("-o", "--output", help="CHARMM stream file to write (default: standard output)")

@@ -1,10 +1,10 @@
-"""Typer plug-in: the frozen pilot typer running on production perception (open_cgenff.perception).
+"""Typer plug-in: the frozen pilot typer running on production perception (ligandff.perception).
 SPEC 5.3 acceptance (pilot regression on B1 not worse). Glue outside src/, which never imports prototype/.
-usage: python -m open_cgenff.benchmarks --typer benchmarks/plugins/pilot_on_production_perception.py"""
+usage: python -m ligandff.benchmarks --typer benchmarks/plugins/pilot_on_production_perception.py"""
 import importlib.util, os
 
-from open_cgenff.molecule import InputMolecule
-from open_cgenff.perception import perceive
+from ligandff.molecule import InputMolecule
+from ligandff.perception import perceive
 
 PROTO = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'prototype')
 
