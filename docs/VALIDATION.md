@@ -49,8 +49,10 @@ by OpenMM with the CGenFF files: one particle per atom and lone pair, finite ene
 | B2/test | 182 | 182 | 7 | 3 | 179 | 0 | 3 |
 | B3 | 34 | 34 | 0 | 14 | 33 | 0 | 1 |
 
-Throughput: about 20 molecules/s per core for the full pipeline (typing, analogy search, charges), 200–370 molecules/s
-for typing alone; the OpenMM build adds ~0.5 s per molecule (reading the CGenFF files each time). The P-II figure for
+Throughput on one core (paper/collect.py, force-field files loaded once): median 2 ms, mean 6.4 ms per molecule for the
+full pipeline (~160 molecules/s); molecules that need analog searches take 10–900 ms. Typing alone: 200–370
+molecules/s. The OpenMM build adds ~0.5 s per molecule (reading the CGenFF files each time). The OUT table's rate is
+measured inside the parallel OpenMM workers and is lower because of contention. The P-II figure for
 the official program is ~30 molecules/s on one 2012 core.
 
 Found and fixed during M7 (FINDINGS §11):
@@ -60,7 +62,8 @@ Found and fixed during M7 (FINDINGS §11):
 - Dihedrals through a linear centre (C≡N, C≡C) received analogs with penalties up to ~3,000 in correctly typed
   training molecules (acetonitrile, the alkynes). CGenFF defines only two such dihedrals and the program recorded no
   analog for any, so they are now omitted when no exact parameter exists. Molecules needing analogs: 68 → 47; with a
-  parameter penalty above 50: 47 → 26 (the rest are molecules whose types we get wrong).
+  parameter penalty above 50: 47 → 26 (on the development splits all but two of these, PHOS and 2300YC, are molecules
+  whose types we get wrong).
 
 ## 4. Limits
 

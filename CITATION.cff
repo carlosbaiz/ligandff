@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: >-
+  If you use LigandFF, please cite the technical report below, together with the CGenFF force field and the CGenFF
+  algorithm papers (Vanommeslaeghe et al. 2010, 2012a, 2012b; Croitoru et al. 2025). LigandFF is CGenFF-compatible;
+  it is not the official CGenFF program.
+title: "LigandFF: CGenFF-compatible atom typing, charge assignment and parameter assignment by analogy"
+type: software
+version: 0.1.0
+authors:
+  - family-names: Baiz
+    given-names: Carlos R.
+    affiliation: The University of Texas at Austin
+repository-code: https://github.com/carlosbaiz/ligandff
+preferred-citation:
+  type: report
+  title: >-
+    LigandFF: an open-source, CGenFF-compatible implementation of rule-based atom typing, charge assignment and
+    parameter assignment by analogy
+  authors:
+    - family-names: Baiz
+      given-names: Carlos R.
+  institution:
+    name: ChemRxiv
+  year: 2026

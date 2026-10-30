@@ -192,7 +192,7 @@ def to_markdown(report, confusions=True):
                 "missing_parameters"] + [f"param_penalty {b}" for _, b in output.PENALTY_BINS]
         out_md = ["## OUT: pipeline output builds an OpenMM system (SPEC 1, 5.14)", "",
                   f"pipeline (typing, parameters, charges, lone pairs): {r['molecules_per_second']:.1f} molecules/s per "
-                  f"core; OpenMM build from `.str` + PSF + CGenFF files, {r['processes']} processes", "",
+                  f"worker under load (OpenMM builds in {r['processes']} processes; single-core timing: paper/collect.py)", "",
                   "| set/split | " + " | ".join(c.replace("_", " ") for c in cols) + " |", "|---" * (len(cols) + 1) + "|"]
         out_md += [f"| {k} | " + " | ".join(str(m.get(c, 0)) for c in cols) + " |" for k, m in r["splits"].items()]
         out_md.append("")
