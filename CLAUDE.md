@@ -10,7 +10,7 @@ bash scripts/fetch_data.sh                 # pinned CGenFF/CHARMM data into data
 python -m pytest -q                        # must stay green
 python -m ligandff.benchmarks --check-floors   # B0/B1/B2/B3/B4/QT/QF/QI report (production typer) -> build/report/
 python -m ligandff.benchmarks.validation       # + set OUT (OpenMM build of all B1/B2/B3) and SPEC §1 targets (~4 min, CI)
-ligandff "CC(=O)Nc1ccc(Cl)cc1" -o x.str --json x.json --psf x.psf  # CLI (pip install -e ".[dev,export]" for OpenMM)
+ligandff "CC(=O)Nc1ccc(Cl)cc1" -o x.str --json x.json --psf x.psf  # CLI (pip install -e ".[dev,export]" for OpenMM; [gromacs] for ParmEd)
 python -m ligandff.benchmarks --sets B1,B2,B3 --typer prototype/typer_pilot.py   # pilot baseline
 bash scripts/import_pi_si.sh <ci300363c_si_001.zip>  # P-I SI special cases -> data/pi_si/ (local only)
 python prototype/build_rtf_benchmark.py data/toppar_c36_releases/charmm/toppar/toppar/top_all36_cgenff.rtf build/b1.pkl

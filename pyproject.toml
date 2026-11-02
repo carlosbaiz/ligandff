@@ -14,7 +14,8 @@ dependencies = ["rdkit>=2024.3", "networkx>=3.0"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
-export = ["openmm>=8.0", "parmed>=4.2"]
+export = ["openmm>=8.0"]
+gromacs = ["parmed>=4.2"]     # source-only on PyPI (needs a C++ compiler); conda-forge has binaries
 
 [project.scripts]
 ligandff-bench = "ligandff.benchmarks.runner:main"

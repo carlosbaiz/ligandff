@@ -11,8 +11,13 @@ SilcsBio. Describe its output as "CGenFF-compatible parameters generated with Li
 
 ## Installation
 
-You need Linux, macOS or Windows with WSL; `git`; and Python 3.10–3.13. Check with `python3 --version`. Run every
-command from a terminal, in the order given.
+You need Linux, macOS or Windows with WSL (Windows Subsystem for Linux), and `git`. Run every command below in a
+terminal, in the order given. There are two ways to install: option A uses conda and is recommended (it includes
+GROMACS export); option B uses plain Python 3.10–3.13.
+
+### Option A: conda (recommended)
+
+You need Miniconda, Miniforge or Anaconda (check with `conda --version`).
 
 **1. Download the code**
 ```bash
@@ -21,53 +26,61 @@ cd ligandff
 ```
 Stay in the `ligandff` folder for the remaining steps.
 
-**2. Create a Python environment and install LigandFF.** Use option A (plain Python) or option B (conda), not both.
-
-Option A, plain Python:
+**2. Create an environment and install LigandFF**
 ```bash
+conda create -n ligandff -c conda-forge python=3.12 rdkit networkx openmm parmed pytest -y
+conda activate ligandff
+python -m pip install -e ".[export,gromacs,dev]"
+```
+
+**3. Download the CGenFF force-field files** (about 650 MB, under a minute on a fast connection)
+```bash
+bash scripts/fetch_data.sh
+```
+
+**4. Check the installation** (about one minute)
+```bash
+python -m pytest -q
+```
+The last line should read `... passed, 2 skipped` with no `failed` (the two skipped tests need private data).
+
+**5. Run a first molecule**
+```bash
+ligandff "CC(=O)Nc1ccc(Cl)cc1" --name LIG -o lig.str --json lig.json --psf lig.psf
+```
+This prints `LIG: param penalty 0.0, charge penalty 0.0, 0 parameters by analogy` and writes `lig.str`, `lig.json`
+and `lig.psf` in the current folder.
+
+In every new terminal, run `conda activate ligandff` before using LigandFF.
+
+### Option B: plain Python (no conda)
+
+You need Python 3.10–3.13 (check with `python3 --version`).
+```bash
+git clone https://github.com/carlosbaiz/ligandff.git
+cd ligandff
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -e ".[export,dev]"
-```
-
-Option B, conda (Miniconda or Anaconda installed):
-```bash
-conda create -n ligandff python=3.12 -y
-conda activate ligandff
-python -m pip install -e ".[export,dev]"
-```
-
-This installs LigandFF with RDKit, NetworkX, OpenMM, ParmEd and pytest. Without `[export,dev]` you get only the core
-(no OpenMM/GROMACS export, no tests).
-
-**3. Download the CGenFF force-field files** (about 650 MB, a few minutes):
-```bash
 bash scripts/fetch_data.sh
-```
-LigandFF reads the CHARMM36/CGenFF 5.0 files from their public repositories at pinned versions. They are not
-redistributed with LigandFF. The script puts them in `data/` inside the `ligandff` folder.
-
-**4. Check the installation** (about one minute):
-```bash
 python -m pytest -q
+ligandff "CC(=O)Nc1ccc(Cl)cc1" --name LIG -o lig.str --json lig.json --psf lig.psf
 ```
-The last line should report `passed` and no `failed`.
+The test line should read `... passed, 3 skipped` with no `failed` (the GROMACS test is skipped without ParmEd). In
+every new terminal, run `cd ligandff` and `source .venv/bin/activate` before using LigandFF.
 
-**5. Run a first molecule:**
-```bash
-ligandff "CC(=O)Nc1ccc(Cl)cc1" --name ACE -o ace.str --json ace.json --psf ace.psf
-```
-This writes `ace.str`, `ace.json` and `ace.psf` in the current folder.
+This option has no GROMACS export: ParmEd is distributed on PyPI only as source code. If you need `--gromacs`, add
+it with `python -m pip install -e ".[gromacs]"`; this needs a C++ compiler (on Ubuntu: `sudo apt install g++`).
 
-**In a new terminal**, reactivate the environment before using LigandFF: `cd ligandff`, then
-`source .venv/bin/activate` (option A) or `conda activate ligandff` (option B).
+### Notes
 
-**From another folder:** the `ligandff` command finds the force-field files in the folder you installed it in. To use
-another copy of the files, pass `--toppar /path/to/toppar` or set the environment variable `LIGANDFF_TOPPAR` to the
-folder that contains `top_all36_cgenff.rtf`, `par_all36_cgenff.prm` and `par_all36_cgenff_increments.prm`.
-
-**Update** to the latest version: `cd ligandff`, `git pull`, then step 4 again.
+- **Force-field files.** LigandFF reads the CHARMM36/CGenFF 5.0 files (`top_all36_cgenff.rtf`,
+  `par_all36_cgenff.prm`, `par_all36_cgenff_increments.prm`). They are not redistributed with LigandFF;
+  `scripts/fetch_data.sh` downloads them from their public repositories at pinned versions into `data/`. The
+  `ligandff` command finds them there from any folder. To use another copy, pass `--toppar /path/to/folder` or set
+  the environment variable `LIGANDFF_TOPPAR` to the folder that contains the three files.
+- **Updating.** `cd ligandff`, `git pull`, then `python -m pytest -q` again.
 
 ## Usage
 
@@ -75,7 +88,7 @@ Input: a mol2, SDF or MOL file with all hydrogens and bond orders, or a SMILES s
 ```bash
 ligandff ligand.mol2 -o ligand.str --json ligand.json     # CHARMM stream file + JSON report
 ligandff ligand.mol2 -o ligand.str --psf ligand.psf       # + PSF (for CHARMM or OpenMM)
-ligandff ligand.mol2 -o ligand.str --gromacs ligand       # + ligand.top / ligand.gro via ParmEd
+ligandff ligand.mol2 -o ligand.str --gromacs ligand       # + ligand.top / ligand.gro (needs ParmEd)
 ligandff --help                                           # all options
 ```
 Use the `.str` file together with the CHARMM36/CGenFF files (`top_all36_cgenff.rtf`, `par_all36_cgenff.prm`), as
@@ -87,15 +100,17 @@ From Python, including an OpenMM system:
 from ligandff.pipeline import parameterize, read_molecule
 from ligandff.export import openmm_system, potential_energy
 
-result = parameterize(read_molecule("CC(=O)Nc1ccc(Cl)cc1", "ACE"), "ACE")
-print(max(a.penalty for a in result.atoms))       # largest charge penalty
+result = parameterize(read_molecule("CC(=O)Nc1ccc(Cl)cc1", "LIG"), "LIG")
+print(result.param_penalty, result.charge_penalty, len(result.analogs))
+for atom in result.atoms:
+    print(atom.name, atom.type, atom.charge, atom.charge_penalty)
 system, psf, positions = openmm_system(result)    # openmm.System from the CGenFF files + our .str
 print(potential_energy(system, positions), "kJ/mol")
 ```
 
 **Penalties** (as in CGenFF): below 10, the analogy is fair; 10–50, some validation is advised; above 50, extensive
-validation is needed. Each parameter and charge in the `.str` and JSON outputs carries its penalty and, for
-analogies, the source parameter it was copied from.
+validation is needed. The `.str` file and the JSON report list each charge and parameter with its penalty and, for
+parameters taken by analogy, the source parameter they were copied from.
 
 ## Accuracy
 

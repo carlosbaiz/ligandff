@@ -117,7 +117,8 @@ def write_gromacs(result, prefix, toppar=None):
     try:
         import parmed
     except ImportError as exc:
-        raise RuntimeError("GROMACS export needs ParmEd: pip install parmed") from exc
+        raise RuntimeError("GROMACS export needs ParmEd: conda install -c conda-forge parmed (or pip install parmed, "
+                           "which needs a C++ compiler)") from exc
     from parmed.charmm import CharmmParameterSet, CharmmPsfFile
     masses = default_engine(toppar).db.file.masses
     xyz = coordinates(result, toppar)

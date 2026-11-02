@@ -20,7 +20,7 @@ jobs:
           cache: pip
 
       - name: Install
-        run: pip install -e ".[dev,export]"     # export: OpenMM + ParmEd for the M6 build tests
+        run: pip install -e ".[dev,export,gromacs]"     # OpenMM + ParmEd for the M6 build tests
 
       # Third-party force-field data is never committed; it is fetched at pinned commits (SPEC 2.3)
       - name: Cache pinned CGenFF data
