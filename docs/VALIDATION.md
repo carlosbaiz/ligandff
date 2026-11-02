@@ -1,6 +1,6 @@
 # Validation report (M7)
 
-LigandFF 0.1.0.dev0, a CGenFF-compatible reimplementation (not the official CGenFF program), targeting CGenFF 5.0.
+LigandFF 0.1.0, a CGenFF-compatible reimplementation (not the official CGenFF program), targeting CGenFF 5.0.
 Date: 2026-10-29. Reproduce with `python -m ligandff.benchmarks.validation` (writes `build/report/validation.md`,
 `report.md`, `report.json`; CI runs it on every push). Benchmarks and splits: SPEC section 7. Test splits are
 reported as aggregates only (SPEC 7.2).

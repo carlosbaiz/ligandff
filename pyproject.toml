@@ -1,10 +1,13 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "ligandff"            # LigandFF (SPEC D1, decided 2026-10-30)
-version = "0.1.0.dev0"
+version = "0.1.0"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "Carlos R. Baiz"}, {name = "Euihyun Lee"}]
 description = "Open-source, CGenFF-compatible atom typing and parameter/charge assignment (clean-room reimplementation)"
 requires-python = ">=3.10"
 dependencies = ["rdkit>=2024.3", "networkx>=3.0"]

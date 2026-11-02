@@ -3,7 +3,7 @@
 Clean-room reimplementation of the published CGenFF algorithms (docs/SPEC.md). Not the official CGenFF program, and
 not affiliated with or endorsed by its developers.
 """
-__version__ = "0.1.0.dev0"
+__version__ = "0.1.0"
 
 TOOL_NAME = "LigandFF"
 TARGET_CGENFF_VERSION = "5.0"

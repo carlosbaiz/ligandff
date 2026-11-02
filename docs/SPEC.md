@@ -456,9 +456,9 @@ for M2 (literal port of the backtracking resonance algorithm) and M5 (matrix inf
 - Commit small; one milestone per branch/PR; update this spec when a decision changes.
 
 ## 11. Open decisions (owner: Carlos)
-- **D1 name** decided 2026-10-30: LigandFF (`ligandff`), described as "CGenFF-compatible"; trademark/literature check still to do. **D2 license** (permissive, e.g. BSD-3/MIT, recommended for adoption;
+- **D1 name** decided 2026-10-30: LigandFF (`ligandff`), described as "CGenFF-compatible"; trademark/literature check still to do. **D2 license** decided 2026-11-02: MIT (`LICENSE`;
   note `lsfitpar` is AGPL: do not copy code from it). **D3** contact the MacKerell lab (data, blessing)?
-  **D4** decided 2026-10-29: no official program outputs (no SilcsBio access; not to be used for training); B5 dropped. **D5** repository hosting (private GitHub until D1/D2;
+  **D4** decided 2026-10-29: no official program outputs (no SilcsBio access; not to be used for training); B5 dropped. **D5** decided 2026-11-02: GitHub `carlosbaiz/ligandff` (replaces `open-cgenff`;
   avoid running git inside OneDrive).
 
 ---

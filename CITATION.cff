@@ -6,10 +6,16 @@ message: >-
 title: "LigandFF: CGenFF-compatible atom typing, charge assignment and parameter assignment by analogy"
 type: software
 version: 0.1.0
+license: MIT
 authors:
+  - family-names: Lee
+    given-names: Euihyun
+    affiliation: The University of Texas at Austin
+    email: euihyun7@utexas.edu
   - family-names: Baiz
     given-names: Carlos R.
     affiliation: The University of Texas at Austin
+    email: cbaiz@cm.utexas.edu
 repository-code: https://github.com/carlosbaiz/ligandff
 preferred-citation:
   type: report
@@ -17,6 +23,8 @@ preferred-citation:
     LigandFF: an open-source, CGenFF-compatible implementation of rule-based atom typing, charge assignment and
     parameter assignment by analogy
   authors:
+    - family-names: Lee
+      given-names: Euihyun
     - family-names: Baiz
       given-names: Carlos R.
   institution:
