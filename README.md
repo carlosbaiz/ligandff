@@ -28,10 +28,13 @@ Stay in the `ligandff` folder for the remaining steps.
 
 **2. Create an environment and install LigandFF**
 ```bash
-conda create -n ligandff -c conda-forge python=3.12 rdkit networkx openmm parmed pytest -y
+conda create -n ligandff --override-channels -c conda-forge python=3.12 rdkit networkx openmm parmed pytest -y
 conda activate ligandff
 python -m pip install -e ".[export,gromacs,dev]"
 ```
+`--override-channels` makes conda use only the free conda-forge channel. Without it, recent Miniconda and Anaconda
+installations also query Anaconda's default channels and stop with `CondaToSNonInteractiveError` until their Terms of
+Service are accepted.
 
 **3. Download the CGenFF force-field files** (about 650 MB, under a minute on a fast connection)
 ```bash
