@@ -10,11 +10,11 @@ license: MIT
 authors:
   - family-names: Lee
     given-names: Euihyun
-    affiliation: The University of Texas at Austin
+    affiliation: Department of Chemistry, University of Texas at Austin
     email: euihyun7@utexas.edu
   - family-names: Baiz
     given-names: Carlos R.
-    affiliation: The University of Texas at Austin
+    affiliation: Department of Chemistry, University of Texas at Austin
     email: cbaiz@cm.utexas.edu
 repository-code: https://github.com/carlosbaiz/ligandff
 preferred-citation:

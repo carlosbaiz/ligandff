@@ -49,7 +49,7 @@ by OpenMM with the CGenFF files: one particle per atom and lone pair, finite ene
 | B2/test | 182 | 182 | 7 | 3 | 179 | 0 | 3 |
 | B3 | 34 | 34 | 0 | 14 | 33 | 0 | 1 |
 
-Throughput on one core (paper/collect.py, force-field files loaded once): median 2 ms, mean 6.4 ms per molecule for the
+Throughput on one core (force-field files loaded once): median 2 ms, mean 6.4 ms per molecule for the
 full pipeline (~160 molecules/s); molecules that need analog searches take 10–900 ms. Typing alone: 200–370
 molecules/s. The OpenMM build adds ~0.5 s per molecule (reading the CGenFF files each time). The OUT table's rate is
 measured inside the parallel OpenMM workers and is lower because of contention. The P-II figure for

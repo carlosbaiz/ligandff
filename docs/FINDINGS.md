@@ -246,7 +246,7 @@ All section 1 targets met (`docs/VALIDATION.md`). Found on the way:
 - Starting coordinates. Embedding the connectivity with single bonds failed for 265 B1/B2 molecules (N+ with four
   bonds; with rule formal charges, still 29 phosphates, whose P carries −1 in CGenFF's convention). Embedding the input
   molecule with its bond orders and input formal charges works for all 2,074.
-- Throughput (one core, data loaded once; `paper/collect.py`): median 2 ms, mean 6.4 ms per molecule for the full
+- Throughput (one core, data loaded once): median 2 ms, mean 6.4 ms per molecule for the full
   pipeline (~160/s); analog searches dominate (10–900 ms for the 47 molecules that need bonded analogs). The OUT set's
   "molecules/s" is measured inside 14 workers that also build OpenMM systems (~20/s, contention). The OpenMM build costs
   ~0.5 s per molecule, mostly reading the CGenFF files. Full validation: ~4 min on 14 cores.

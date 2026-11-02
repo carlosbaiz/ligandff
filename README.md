@@ -142,7 +142,6 @@ python -m ligandff.benchmarks.validation       # + OpenMM build of every benchma
 - `docs/FINDINGS.md`: the evidence behind each number in the spec
 - `docs/VALIDATION.md`: validation report (targets, train/test, limitations)
 - `docs/RULES_CHANGELOG.md`: every typing and penalty-rule change with its benchmark effect
-- `paper/`: source of the technical report and the scripts that regenerate its figures
 
 ## License
 
