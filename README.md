@@ -42,7 +42,8 @@ bash scripts/fetch_data.sh
 ```bash
 python -m pytest -q
 ```
-The last line should read `... passed, 2 skipped` with no `failed` (the two skipped tests need private data).
+The last line should read like `119 passed, 2 skipped` and must not mention `failed` (the two skipped tests need
+local data that is not distributed).
 
 **5. Run a first molecule**
 ```bash
@@ -67,7 +68,8 @@ bash scripts/fetch_data.sh
 python -m pytest -q
 ligandff "CC(=O)Nc1ccc(Cl)cc1" --name LIG -o lig.str --json lig.json --psf lig.psf
 ```
-The test line should read `... passed, 3 skipped` with no `failed` (the GROMACS test is skipped without ParmEd). In
+The test summary should read like `118 passed, 3 skipped` and must not mention `failed` (here the GROMACS test is
+also skipped, because ParmEd is not installed). In
 every new terminal, run `cd ligandff` and `source .venv/bin/activate` before using LigandFF.
 
 This option has no GROMACS export: ParmEd is distributed on PyPI only as source code. If you need `--gromacs`, add

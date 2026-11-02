@@ -3,6 +3,7 @@ OpenMM's CHARMM PSF/parameter readers build the system from the CGenFF files plu
 readers do the same for GROMACS .top/.gro.
 """
 import tempfile
+import warnings
 from pathlib import Path
 
 from .io.psf import write_psf
@@ -127,7 +128,9 @@ def write_gromacs(result, prefix, toppar=None):
         write_psf(result, masses, psf_path)
         write_str(result, str_path)
         structure = CharmmPsfFile(str(psf_path))
-        structure.load_parameters(CharmmParameterSet(*_parameter_files(toppar_dir(toppar), str_path)))
+        with warnings.catch_warnings():               # COLINEAR lone pairs of the CGenFF topology file; ours has none
+            warnings.filterwarnings("ignore", message="LONEPAIR type COLINEAR not supported")
+            structure.load_parameters(CharmmParameterSet(*_parameter_files(toppar_dir(toppar), str_path)))
     structure.coordinates = xyz                           # Angstrom; types and CHARMM terms kept from the PSF/files
     structure.save(f"{prefix}.top", format="gromacs", overwrite=True, combine="all")
     structure.save(f"{prefix}.gro", overwrite=True)
