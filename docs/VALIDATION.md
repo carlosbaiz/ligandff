@@ -83,9 +83,12 @@ Found and fixed during M7 (FINDINGS §11):
    expect with today's program: batch labels were chosen from a smaller pool, and non-batch labels come from several
    program versions. Treat analog parameters as the penalties say: validate them.
 4. **Penalty values.** The fitted matrix (M5) reproduces the replayed batch choices (B4 same source 92 %), but substitutions never
-   observed in the parameter file cost 20 × the relation median. Penalties built from them (typically > 100, up to
-   thousands) are a "do not trust" signal, not values the official program would print. Penalties below ~10 come
-   from observed elements and agree with the program on B4 (TPS within ±0.5 for 92 %).
+   observed in the parameter file cost 20 × the relation median. Penalties built from them are not values the
+   official program would print, so the outputs label them "estimated" (`.str` parameter lines and header, JSON,
+   CLI). Over all B1/B2/B3 molecules, 212 of 385 analog parameters are estimated (26 of the 47 molecules with
+   analogs): 192 above 50, 17 in 10–50 and 3 below 10, which the official thresholds would have passed as fair
+   (FINDINGS §13). Unlabelled penalties come from observed elements; on the replayed B4 cases, recomputed penalties
+   match the recorded ones within ±0.5 for 92 %.
 5. **Linear-centre dihedrals** are left out of our PSF and OpenMM system (section 3). CHARMM itself may still generate
    them from the residue (`AUTOGENERATE ... DIHE`), exactly as for official training residues such as ACN; how CHARMM
    treats the missing parameters there is not checked. The charge side is unchanged: dihedral increments through a

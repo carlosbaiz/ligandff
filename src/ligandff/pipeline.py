@@ -24,6 +24,7 @@ class Atom:
     charge: float
     charge_penalty: float
     formal_charge: int = 0
+    charge_penalty_estimated: bool = False    # includes an analog penalty from unobserved substitutions
 
 
 @dataclass
@@ -49,6 +50,17 @@ class Result:
     @property
     def charge_penalty(self):
         return max((a.charge_penalty for a in self.atoms), default=0.0)
+
+    @property
+    def param_penalty_estimated(self):
+        """The RESI param penalty comes from an analog priced with unobserved substitutions (not the official scale)."""
+        top = self.param_penalty
+        return any(p.analog is not None and p.analog.estimated and p.penalty == top for p in self.assignment.parameters)
+
+    @property
+    def charge_penalty_estimated(self):
+        top = self.charge_penalty
+        return any(a.charge_penalty_estimated and a.charge_penalty == top for a in self.atoms)
 
     @property
     def analogs(self):
@@ -83,8 +95,8 @@ def parameterize_typed(typed, name=DEFAULT_RESNAME, toppar=None, engine=None, ta
     charges = charge_molecule(typed, table, charge_analogs(typed, engine, table))
     lps = lone_pairs(typed.names, typed.types, typed.bonds)
     q = apply_lone_pair_charges(charges.charges, lps)
-    atoms = [Atom(n, t, round(c, 6), round(p, 6), f)
-             for n, t, c, p, f in zip(typed.names, typed.types, q, charges.penalties, typed.formal_charges)]
+    atoms = [Atom(n, t, round(c, 6), round(p, 6), f, e) for n, t, c, p, f, e in
+             zip(typed.names, typed.types, q, charges.penalties, typed.formal_charges, charges.estimated)]
     warnings = list(typed.warnings)
     warnings += [f"no charge increments for {' '.join(k)}" for k in charges.missing]
     warnings += [f"no parameter or analog for {kind} {' '.join(t)}" for kind, t in assignment.missing]

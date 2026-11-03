@@ -52,7 +52,9 @@ def main(argv=None):
         print(f"warning: {w}", file=sys.stderr)
     for e in result.errors:
         print(f"error: {e}", file=sys.stderr)
-    print(f"{result.name}: param penalty {result.param_penalty:.1f}, charge penalty {result.charge_penalty:.1f}, "
+    est = lambda flag: " (estimated)" if flag else ""                 # noqa: E731
+    print(f"{result.name}: param penalty {result.param_penalty:.1f}{est(result.param_penalty_estimated)}, "
+          f"charge penalty {result.charge_penalty:.1f}{est(result.charge_penalty_estimated)}, "
           f"{len(result.analogs)} parameters by analogy", file=sys.stderr)
     if written:
         print("wrote " + ", ".join(written), file=sys.stderr)

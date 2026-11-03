@@ -201,6 +201,25 @@ def test_gromacs_with_gmx(toppar, tmp_path):
     assert e_gmx == pytest.approx(e_charmm, abs=0.01)
 
 
+def test_estimated_penalties_flagged(toppar, m064):
+    """Penalties built from substitutions never observed in the recorded analogies are labelled (not official scale);
+    RESI/ATOM lines keep the official layout. Observed-only analogs (M064) carry no label."""
+    r = parameterize(read_molecule('CC(=O)OO', 'PAA'), toppar=toppar)          # peracetic acid: O-O analogs
+    est = [a for a in r.analogs.values() if a.estimated]
+    assert est and all(a.unobserved for a in est) and r.param_penalty_estimated
+    text = to_str(r)
+    assert "'estimated penalty'" in text and '! The RESI param penalty is estimated.' in text
+    for an in est:
+        rows = [x for x in text.splitlines() if x.startswith(' '.join(f'{y:<6s}' for y in an.missing))]
+        assert rows and all(', estimated penalty= ' in x for x in rows)
+    flagged = [a.name for a in r.atoms if a.charge_penalty_estimated]
+    assert flagged and '! Estimated charge penalties (atoms): ' + ' '.join(flagged) in text
+    rep = to_report(r)
+    assert rep['param_penalty_estimated'] and any(x['estimated'] and x['unobserved_substitutions']
+                                                  for x in rep['analog_parameters'])
+    assert 'estimated' not in to_str(m064[1])
+
+
 def test_linear_centre_dihedrals_omitted(toppar):
     """Dihedrals through C#N / C#C without a parameter get no analog (FINDINGS §11); exact ones are kept."""
     r = parameterize(read_molecule('CC#N', 'ACN'), toppar=toppar)

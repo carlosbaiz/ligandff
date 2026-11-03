@@ -279,3 +279,16 @@ All section 1 targets met (`docs/VALIDATION.md`). Found on the way:
   precision). Parameters are printed with 9 significant decimals: with 6, a strained spiro starting geometry (2300SI,
   1-4 LJ 5,400 kJ/mol) was off by 0.07 kJ/mol from rounding alone. CI checks five molecules through OpenMM's GROMACS
   reader (without the funct-2 virtual site, which that reader lacks), and runs GROMACS itself when `gmx` is installed.
+
+## 13. Estimated penalties (2026-11-02)
+- Matrix elements come from three sources: published rules (NG3 hierarchy), observed elements (single-substitution
+  annotations of B4-train, solved multi-substitution elements, altnum twins) and the fallback for substitutions never
+  observed (relation median × 20, §10). Fallback values are a ranking device, not calibrated penalties, yet they were
+  printed in the official `.str` layout, where users apply the official thresholds.
+- Over all B1/B2/B3 molecules: 385 analog parameters, 212 of them use at least one fallback element (26 of 47
+  molecules with analogs); by value 192 > 50, 17 in 10–50, 3 < 10. Unlabelled (observed-only) analogs: 99 < 10, 39 in
+  10–50, 35 > 50. Atoms with a charge penalty > 0: 115 include an estimated analog (72 > 50, 33 in 10–50, 10 < 10),
+  374 do not. Dihedral charge analogs capped at 50 (P-II rule) are not estimates.
+- Output: `AnalogResult.unobserved` lists the fallback substitutions; `.str` parameter lines read `estimated
+  penalty=`, header comments name the affected RESI value and atoms, JSON and CLI carry flags (SPEC 3). Values are
+  unchanged; RESI/ATOM lines keep the official layout so tools that parse them are unaffected.

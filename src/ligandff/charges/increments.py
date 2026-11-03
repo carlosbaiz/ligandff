@@ -26,6 +26,7 @@ class Analog:
     """Parameter used in place of a missing one: its types (as in the parameter file) and analogy penalty."""
     source: tuple
     penalty: float
+    estimated: bool = False   # penalty uses unobserved substitutions (AnalogResult.estimated)
 
 
 class IncrementTable:
@@ -63,6 +64,7 @@ class ChargeResult:
     penalties: list                                       # per-atom charge penalties (P-II eq 4)
     missing: list                                         # parameter types with neither increments nor an analog
     analogs_used: dict = field(default_factory=dict)      # missing types (as seen in the molecule) -> Analog
+    estimated: list = field(default_factory=list)         # per atom: penalty includes an estimated analog penalty
 
     @property
     def charge_penalty(self):
@@ -102,11 +104,12 @@ def assign_charges(types, bonds, formal_charges, table, analogs=None, max_dihedr
     analogs = _normalize_analogs(analogs)
     q = [float(x) for x in formal_charges]
     contrib = collections.defaultdict(list)               # atom -> [(net transfer, penalty)]
+    estimated = [False] * n
     missing, used = set(), {}
     for inst in parameter_instances(n, bonds):
         key = tuple(types[a] for a in inst)
         values, orient = table.lookup(key)
-        penalty = 0.0
+        penalty, est = 0.0, False
         if values is _MISSING:
             analog, key_orient = analogs.get(key), 1
             if analog is None:
@@ -117,9 +120,9 @@ def assign_charges(types, bonds, formal_charges, table, analogs=None, max_dihedr
             if values is _MISSING:
                 missing.add(key); continue
             used[key] = analog
-            orient, penalty = key_orient * src_orient, analog.penalty
-            if len(inst) == 4 and penalty > max_dihedral_penalty:
-                values, penalty = (0.0, 0.0, 0.0), max_dihedral_penalty
+            orient, penalty, est = key_orient * src_orient, analog.penalty, analog.estimated
+            if len(inst) == 4 and penalty > max_dihedral_penalty:          # capped: the official rule, not an estimate
+                values, penalty, est = (0.0, 0.0, 0.0), max_dihedral_penalty, False
         if values is None:
             continue
         atoms = inst if orient == 1 else inst[::-1]
@@ -131,7 +134,8 @@ def assign_charges(types, bonds, formal_charges, table, analogs=None, max_dihedr
             q[a] += dq
             if penalty > 0:
                 contrib[a].append((dq, penalty))
-    return ChargeResult(q, [atom_penalty(contrib[i]) for i in range(n)], sorted(missing), used)
+                estimated[a] = estimated[a] or est
+    return ChargeResult(q, [atom_penalty(contrib[i]) for i in range(n)], sorted(missing), used, estimated)
 
 
 def charge_molecule(mol, table, analogs=None, **kwargs):

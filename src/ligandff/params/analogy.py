@@ -27,6 +27,12 @@ class AnalogResult:
     parameter: object         # io.prm.Parameter of the source
     aligned: tuple            # source types aligned position by position with `missing`
     penalty: float
+    unobserved: tuple = ()    # (missing type, source type) substitutions priced by the fallback (never observed)
+
+    @property
+    def estimated(self):
+        """The penalty uses substitutions never observed in the recorded analogies: not on the official scale."""
+        return bool(self.unobserved)
 
     @property
     def source(self):
@@ -147,7 +153,9 @@ class AnalogyEngine:
             aligned = [None] * len(types)
             for j, i in enumerate(perms[oi]):
                 aligned[i] = prm.types[j]
-            result = AnalogResult(kind, types, prm, tuple(aligned), round(score, 6))
+            unobserved = tuple((a, b) for m, a, b in zip(mats, types, aligned)
+                               if a != b and m.source(a, b) == "fallback")
+            result = AnalogResult(kind, types, prm, tuple(aligned), round(score, 6), unobserved)
         self._cache[key] = result
         return result
 
@@ -267,7 +275,7 @@ def charge_analogs(mol, engine, table):
             continue
         res = engine.find(kind, types, mode="charge", accept=accept)
         if res is not None:
-            out[types] = Analog(res.aligned, res.penalty)
+            out[types] = Analog(res.aligned, res.penalty, res.estimated)
     return out
 
 

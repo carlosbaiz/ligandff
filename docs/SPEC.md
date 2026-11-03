@@ -88,6 +88,11 @@ END
 RETURN
 ```
 Plus a machine-readable JSON report (types, charges, penalties, parameter provenance, warnings) for benchmarking.
+Estimated penalties (since 2026-11-02, FINDINGS §13): a penalty that uses a substitution never observed in the recorded
+analogies (fallback element, 5.10) is not on the official scale. Its parameter line reads `..., estimated penalty=
+<tps>`; header comments explain the label, say whether the RESI param penalty is estimated, and list atoms whose charge
+penalty includes such an analog. RESI and ATOM lines keep the official layout; the JSON report carries the same flags
+(`estimated`, `unobserved_substitutions`, `param_penalty_estimated`, `charge_penalty_estimated`).
 
 ## 4. Architecture
 

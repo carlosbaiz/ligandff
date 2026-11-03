@@ -126,6 +126,11 @@ print(potential_energy(system, positions), "kJ/mol")
 validation is needed. The `.str` file and the JSON report list each charge and parameter with its penalty and, for
 parameters taken by analogy, the source parameter they were copied from.
 
+Penalties marked **estimated** (`estimated penalty=` in the `.str`, `"estimated": true` in the JSON, "(estimated)" in
+the command-line summary) are not on the official scale. The analogy needs a substitution never seen in CGenFF's
+recorded analogies, and LigandFF can only guess its cost. Do not apply the thresholds above to them: validate or
+optimize those terms whatever the number says.
+
 ## Accuracy
 
 On held-out molecules from the CGenFF training sets, LigandFF assigns every atom type correctly in 97–98 % of
