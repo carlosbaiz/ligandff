@@ -1,9 +1,8 @@
-"""OpenMM and GROMACS export (SPEC 5.14), reusing established readers/converters rather than new force-field code:
-OpenMM's CHARMM PSF/parameter readers build the system from the CGenFF files plus our .str; ParmEd's (optional) CHARMM
-readers do the same for GROMACS .top/.gro.
+"""OpenMM and GROMACS export (SPEC 5.14). OpenMM's CHARMM PSF/parameter readers build the system from the CGenFF files
+plus our .str. GROMACS files are written directly from our parameter assignment (io.gromacs) and checked against the
+OpenMM energies (tests/test_output.py).
 """
 import tempfile
-import warnings
 from pathlib import Path
 
 from .io.psf import write_psf
@@ -107,31 +106,14 @@ def potential_energy(system, positions):
 
 
 def write_gromacs(result, prefix, toppar=None):
-    """<prefix>.top and <prefix>.gro via ParmEd (optional dependency) from our PSF + the CGenFF files + our
-    .str (ParmEd's CHARMM readers, so the CGenFF atom type names are kept).
+    """<prefix>.itp (molecule, explicit parameters), <prefix>.top (standalone) and <prefix>.gro; see io.gromacs.
 
-    Not for molecules with halogen lone pairs: ParmEd does not carry CHARMM lone pairs into GROMACS virtual sites, so
-    the lone pair would become a free particle. Use the .str with the Lemkul lab's cgenff_charmm2gmx converter for those."""
-    if result.lone_pairs:
-        raise NotImplementedError(f"{result.name}: GROMACS export of halogen lone pairs is not supported through "
-                                  "ParmEd; convert the .str with cgenff_charmm2gmx instead")
-    try:
-        import parmed
-    except ImportError as exc:
-        raise RuntimeError("GROMACS export needs ParmEd: conda install -c conda-forge parmed (or pip install parmed, "
-                           "which needs a C++ compiler)") from exc
-    from parmed.charmm import CharmmParameterSet, CharmmPsfFile
-    masses = default_engine(toppar).db.file.masses
-    xyz = coordinates(result, toppar)
-    with tempfile.TemporaryDirectory() as workdir:
-        psf_path, str_path = Path(workdir) / f"{result.name}.psf", Path(workdir) / f"{result.name}.str"
-        write_psf(result, masses, psf_path)
-        write_str(result, str_path)
-        structure = CharmmPsfFile(str(psf_path))
-        with warnings.catch_warnings():               # COLINEAR lone pairs of the CGenFF topology file; ours has none
-            warnings.filterwarnings("ignore", message="LONEPAIR type COLINEAR not supported")
-            structure.load_parameters(CharmmParameterSet(*_parameter_files(toppar_dir(toppar), str_path)))
-    structure.coordinates = xyz                           # Angstrom; types and CHARMM terms kept from the PSF/files
-    structure.save(f"{prefix}.top", format="gromacs", overwrite=True, combine="all")
-    structure.save(f"{prefix}.gro", overwrite=True)
-    return f"{prefix}.top", f"{prefix}.gro"
+    Halogen lone pairs become virtual sites. Needs RDKit only (coordinates are embedded when the input has none)."""
+    from .io import gromacs
+    pfile = default_engine(toppar).db.file
+    itp = Path(f"{prefix}.itp")
+    paths = (itp, Path(f"{prefix}.top"), Path(f"{prefix}.gro"))
+    paths[0].write_text(gromacs.to_itp(result, pfile))
+    paths[1].write_text(gromacs.to_top(result, pfile, itp.name))
+    paths[2].write_text(gromacs.to_gro(result, coordinates(result, toppar)))
+    return tuple(str(x) for x in paths)

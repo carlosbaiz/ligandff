@@ -353,14 +353,14 @@ IMPR lines: B1-train 884/895, B1-test 219/220, B2-train 705/720, B2-test 175/178
 exactly the reference centres.
 
 ### 5.14 Writers
-CHARMM `.str` (section 3). GROMACS and OpenMM: reuse established converters (e.g. ParmEd; the Lemkul lab
-`cgenff_charmm2gmx` script) rather than writing new ones. Accept: OpenMM can build a system from the output for all
-B3 molecules; energies match CHARMM where CHARMM is available.
+CHARMM `.str` (section 3). OpenMM: reuse its CHARMM readers. GROMACS: written directly from the parameter assignment
+(converters lose CGenFF details, FINDINGS §12). Accept: OpenMM can build a system from the output for all B3
+molecules; GROMACS energies match the OpenMM/CHARMM build.
 Status: done (M6): `pipeline.py` (`read_molecule`, `parameterize`, `parameterize_typed`), `io/stream.py` (`.str` in
 the section 3 layout + JSON report), `io/psf.py` (PSF with NUMLP lone pairs), `export.py` (OpenMM through
-`CharmmPsfFile` + `CharmmParameterSet(top_all36_cgenff.rtf, par_all36_cgenff.prm, our .str)`; GROMACS `.top/.gro`
-through ParmEd's CHARMM readers from the same files, molecules without lone pairs only: ParmEd does not convert CHARMM lone pairs, so
-for halogenated aromatics the `.str` goes through `cgenff_charmm2gmx`), `cli.py` (`ligandff INPUT -o x.str --json --psf --gromacs`). All 34 B3 molecules
+`CharmmPsfFile` + `CharmmParameterSet(top_all36_cgenff.rtf, par_all36_cgenff.prm, our .str)`; GROMACS `.itp/.top/.gro`
+from `io/gromacs.py`, lone pairs as virtual sites; written by default next to the `.str` since 2026-11-02, FINDINGS §12),
+`cli.py` (`ligandff INPUT -o x.str --json --psf [--gromacs PREFIX | --no-gromacs]`). All 34 B3 molecules
 and all 2,040 B1/B2 molecules run through the pipeline without typing errors; every B3 molecule and every B1/B2
 molecule with lone pairs (31) builds an OpenMM system with the virtual site on the C–X axis (tests); since M7 every
 B1/B2/B3 molecule does (set OUT, 2,074/2,074). The analog lines

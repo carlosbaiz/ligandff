@@ -1,12 +1,14 @@
 """Command line: CGenFF-compatible parameters for one molecule (not the official CGenFF program).
 
-usage: ligandff INPUT [-o OUT.str] [--json OUT.json] [--name RESI] [--psf OUT.psf] [--gromacs PREFIX]
+usage: ligandff INPUT [-o OUT.str] [--json OUT.json] [--name RESI] [--psf OUT.psf] [--gromacs PREFIX | --no-gromacs]
                          [--toppar DIR]
 INPUT: a .mol2/.sdf/.mol file with all hydrogens and bond orders, or a SMILES string (hydrogens added).
+With -o OUT.str, GROMACS files OUT.itp, OUT.top and OUT.gro are written next to it (unless --no-gromacs).
 Without -o the stream file is printed to standard output. Exit code 1 if typing reported errors.
 """
 import argparse
 import sys
+from pathlib import Path
 
 from . import banner
 from .io.stream import to_str, write_report, write_str
@@ -21,8 +23,11 @@ def main(argv=None):
     ap.add_argument("--json", help="also write a JSON report (types, charges, penalties, parameter provenance)")
     ap.add_argument("--name", help="residue name (default: molecule name, else LIG)")
     ap.add_argument("--psf", help="also write a CHARMM PSF (for OpenMM's CharmmPsfFile)")
-    ap.add_argument("--gromacs", metavar="PREFIX",
-                    help="also write PREFIX.top/.gro (needs OpenMM and ParmEd; not for molecules with lone pairs)")
+    gmx = ap.add_mutually_exclusive_group()
+    gmx.add_argument("--gromacs", metavar="PREFIX",
+                     help="GROMACS PREFIX.itp (molecule), PREFIX.top (standalone) and PREFIX.gro "
+                          "(default: next to the -o file)")
+    gmx.add_argument("--no-gromacs", action="store_true", help="do not write GROMACS files")
     ap.add_argument("--toppar", help="CHARMM toppar directory (default: data/ from scripts/fetch_data.sh)")
     ap.add_argument("--version", action="version", version=banner())
     args = ap.parse_args(argv)
@@ -38,15 +43,19 @@ def main(argv=None):
         from .io.psf import write_psf
         from .params import default_engine
         write_psf(result, default_engine(args.toppar).db.file.masses, args.psf)
-    if args.gromacs:
+    written = [x for x in (args.output, args.json, args.psf) if x]
+    prefix = args.gromacs or (args.output and not args.no_gromacs and str(Path(args.output).with_suffix("")))
+    if prefix:
         from .export import write_gromacs
-        write_gromacs(result, args.gromacs, args.toppar)
+        written += write_gromacs(result, prefix, args.toppar)
     for w in result.warnings:
         print(f"warning: {w}", file=sys.stderr)
     for e in result.errors:
         print(f"error: {e}", file=sys.stderr)
     print(f"{result.name}: param penalty {result.param_penalty:.1f}, charge penalty {result.charge_penalty:.1f}, "
           f"{len(result.analogs)} parameters by analogy", file=sys.stderr)
+    if written:
+        print("wrote " + ", ".join(written), file=sys.stderr)
     return 1 if result.errors else 0
 
 

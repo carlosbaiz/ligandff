@@ -250,3 +250,21 @@ All section 1 targets met (`docs/VALIDATION.md`). Found on the way:
   pipeline (~160/s); analog searches dominate (10–900 ms for the 47 molecules that need bonded analogs). The OUT set's
   "molecules/s" is measured inside 14 workers that also build OpenMM systems (~20/s, contention). The OpenMM build costs
   ~0.5 s per molecule, mostly reading the CGenFF files. Full validation: ~4 min on 14 cores.
+
+## 12. GROMACS export (2026-11-02)
+- The M6 export through ParmEd (`CharmmPsfFile` + `CharmmParameterSet` → `.top`) was wrong for every molecule: it wrote
+  no CGenFF 1-4 Lennard-Jones parameters (`[ pairs ]` without values and no `[ pairtypes ]`, so GROMACS used the normal
+  LJ values for 1-4 pairs; acetanilide: +13.9 kJ/mol against the OpenMM/CHARMM build at the same coordinates), kept
+  CHARMM's negative well depths in `[ atomtypes ]`, and could not convert halogen lone pairs (export refused them; a
+  user hit this on 4'-chloroacetanilide). The tests only checked that files were written.
+- Now written directly (`io/gromacs.py`): explicit bonded parameters, explicit 1-4 pair parameters (CGenFF 1-4 values,
+  or NBFIX, which OpenMM's CHARMM reader also applies to 1-4 pairs), 1-4 pairs by shortest path of 3 bonds, NBFIX in
+  `[ nonbond_params ]`, lone pairs as `[ virtual_sites2 ]` funct 2 (fixed distance, a = −d) excluded like their halogen
+  (the OpenMM build gives them exceptions only with the halogen and its 1-2/1-3 partners; their 1-4 interactions are
+  plain Coulomb, which equals CHARMM's unscaled 1-4 electrostatics).
+- Check: GROMACS 2022.1 single points (no cutoff effects: 4 nm cutoff, plain Coulomb, no modifiers) against the OpenMM
+  build from the CHARMM files + `.str`, at the same coordinates, for all 2,074 OUT molecules (B1/B2/B3 incl. 31 with lone
+  pairs, 577 charged, 47 with analogs): all agree, largest difference 0.011 kJ/mol (2·10⁻⁵ relative; GROMACS single
+  precision). Parameters are printed with 9 significant decimals: with 6, a strained spiro starting geometry (2300SI,
+  1-4 LJ 5,400 kJ/mol) was off by 0.07 kJ/mol from rounding alone. CI checks five molecules through OpenMM's GROMACS
+  reader (without the funct-2 virtual site, which that reader lacks), and runs GROMACS itself when `gmx` is installed.

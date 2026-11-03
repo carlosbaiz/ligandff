@@ -110,17 +110,95 @@ def test_cli_writes_stream_json_and_psf(toppar, tmp_path, capsys):
     assert 'param penalty' in capsys.readouterr().err
     rc = cli_main(['CCO', '--toppar', toppar])
     assert rc == 0 and 'RESI LIG' in capsys.readouterr().out
+    assert all((tmp_path / f'x.{ext}').exists() for ext in ('itp', 'top', 'gro'))     # GROMACS by default
+    rc = cli_main(['CCO', '-o', str(tmp_path / 'eth.str'), '--no-gromacs', '--toppar', toppar])
+    assert rc == 0 and not (tmp_path / 'eth.itp').exists()
 
 
-def test_gromacs_export(toppar, tmp_path):
+def _gromacs_vs_charmm(r, prefix, toppar):
+    """(E from our GROMACS files read by OpenMM, E from the CHARMM files + .str) in kJ/mol at the .gro positions.
+
+    OpenMM's GROMACS reader has no fixed-distance virtual site (funct 2), so the [ virtual_sites2 ] block is dropped and
+    each lone pair stays a massless particle, placed where the CHARMM build puts it."""
+    import openmm
+    from openmm import app, unit
+    from ligandff.export import openmm_system, write_gromacs
+    itp, top, gro = write_gromacs(r, prefix, toppar)
+    lines, skip = [], False
+    for line in open(itp).read().splitlines():
+        skip = (skip or line.startswith('[ virtual_sites2 ]')) and not line.startswith('[ exclusions ]')
+        lines.append('' if skip else line)
+    open(itp, 'w').write('\n'.join(lines) + '\n')
+    positions = app.GromacsGroFile(gro).positions
+    energies = []
+    for system in (openmm_system(r, toppar)[0], app.GromacsTopFile(top).createSystem(nonbondedMethod=app.NoCutoff)):
+        ctx = openmm.Context(system, openmm.VerletIntegrator(0.001), openmm.Platform.getPlatformByName('Reference'))
+        ctx.setPositions(positions)
+        ctx.computeVirtualSites()
+        positions = ctx.getState(getPositions=True).getPositions()       # exact lone-pair positions for the 2nd
+        energies.append(ctx.getState(getEnergy=True).getPotentialEnergy().value_in_unit(unit.kilojoule_per_mole))
+    return energies[::-1]
+
+
+@pytest.mark.parametrize('smiles', ['CC(=O)Nc1ccccc1',             # 1-4 LJ, UB, impropers
+                                    'C[NH3+]',                      # charged
+                                    'CN1C(=O)N[C@]2(CCOC2)C1=O',    # spiro rings (1-4 pairs by shortest path)
+                                    'CC(=O)Nc1ccc(Cl)cc1',          # lone pair, NBFIX (OG2D1, NG2S1 - CLGR1)
+                                    'Brc1ccc(I)cc1C#N'])            # two lone pairs, linear centre
+def test_gromacs_energy_matches_charmm(toppar, tmp_path, smiles):
+    """Our .itp/.top give the energy of the CHARMM files + .str (FINDINGS §12: all 2,074 OUT molecules agree)."""
     pytest.importorskip('openmm')
-    pytest.importorskip('parmed')
+    r = parameterize(read_molecule(smiles, 'LIG'), toppar=toppar)
+    e_gmx, e_charmm = _gromacs_vs_charmm(r, str(tmp_path / 'lig'), toppar)
+    assert e_gmx == pytest.approx(e_charmm, abs=1e-3, rel=1e-6)
+
+
+def test_gromacs_lone_pair_virtual_site(toppar, tmp_path):
     from ligandff.export import write_gromacs
-    r = parameterize(read_molecule('Fc1ccccc1C(=O)O', 'FBA'), toppar=toppar)
-    top, gro = write_gromacs(r, str(tmp_path / 'fba'), toppar)
-    assert 'FGR1' in open(top).read() and len(open(gro).read().splitlines()) == len(r.atoms) + 3
-    with pytest.raises(NotImplementedError):                       # lone pairs: not through ParmEd
-        write_gromacs(parameterize(read_molecule('Clc1ccccc1', 'CLB'), toppar=toppar), str(tmp_path / 'clb'), toppar)
+    r = parameterize(read_molecule('Clc1ccccc1', 'CLB'), toppar=toppar)
+    itp, top, gro = write_gromacs(r, str(tmp_path / 'clb'), toppar)
+    text = open(itp).read()
+    n = len(r.atoms)
+    lp = r.lone_pairs[0]
+    site = text.split('[ virtual_sites2 ]')[1].splitlines()[2].split()
+    assert site == [str(n + 1), str(lp.host + 1), str(lp.base + 1), '2', f'{-lp.distance / 10:.7f}']
+    excl = [int(x) for x in text.split('[ exclusions ]')[1].splitlines()[2].split()]
+    assert excl[0] == n + 1 and lp.host + 1 in excl and lp.base + 1 in excl
+    assert '#include "clb.itp"' in open(top).read() and 'CLGR1' in open(top).read()
+    rows = open(gro).read().splitlines()
+    assert len(rows) == n + 4 and rows[-2][10:15].strip() == lp.name
+    xyz = [[float(row[20 + 8 * k:28 + 8 * k]) for k in range(3)] for row in rows[2:-1]]
+    assert math.dist(xyz[n], xyz[lp.host]) == pytest.approx(lp.distance / 10, abs=2e-3)
+
+
+def test_gromacs_with_gmx(toppar, tmp_path):
+    """Single point in GROMACS itself (virtual site funct 2 included); skipped where gmx is not installed."""
+    import re
+    import shutil
+    import subprocess
+    pytest.importorskip('openmm')
+    if not shutil.which('gmx'):
+        pytest.skip('GROMACS (gmx) not installed')
+    import openmm
+    from openmm import app, unit
+    from ligandff.export import openmm_system, write_gromacs
+    r = parameterize(read_molecule('CC(=O)Nc1ccc(Cl)cc1', 'LIG'), toppar=toppar)
+    itp, top, gro = write_gromacs(r, str(tmp_path / 'lig'), toppar)
+    rows = open(gro).read().splitlines()
+    open(tmp_path / 'box.gro', 'w').write('\n'.join(rows[:-1] + ['  12.0  12.0  12.0']) + '\n')
+    (tmp_path / 'sp.mdp').write_text('integrator=md\nnsteps=0\ncutoff-scheme=Verlet\npbc=xyz\nrlist=4.0\n'
+                                     'coulombtype=Cut-off\ncoulomb-modifier=None\nrcoulomb=4.0\nepsilon-rf=1\n'
+                                     'vdwtype=Cut-off\nvdw-modifier=None\nrvdw=4.0\nDispCorr=no\n')
+    run = lambda *a: subprocess.run(a, cwd=tmp_path, capture_output=True, text=True, check=True)   # noqa: E731
+    run('gmx', 'grompp', '-f', 'sp.mdp', '-p', 'lig.top', '-c', 'box.gro', '-o', 'sp.tpr', '-maxwarn', '5')
+    run('gmx', 'mdrun', '-s', 'sp.tpr', '-deffnm', 'sp', '-nt', '1')
+    e_gmx = float(re.search(r'^\s+Potential\s+(\S+)', run('gmx', 'dump', '-e', 'sp.edr').stdout, re.M).group(1))
+    system = openmm_system(r, toppar)[0]
+    ctx = openmm.Context(system, openmm.VerletIntegrator(0.001), openmm.Platform.getPlatformByName('Reference'))
+    ctx.setPositions(app.GromacsGroFile(gro).positions)
+    ctx.computeVirtualSites()
+    e_charmm = ctx.getState(getEnergy=True).getPotentialEnergy().value_in_unit(unit.kilojoule_per_mole)
+    assert e_gmx == pytest.approx(e_charmm, abs=0.01)
 
 
 def test_linear_centre_dihedrals_omitted(toppar):

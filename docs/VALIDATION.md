@@ -86,7 +86,9 @@ Found and fixed during M7 (FINDINGS §11):
 5. **Typing residuals** (dev splits): mostly zwitterionic/mesoionic resonance structures (e.g. 2300VB, PNTM),
    exotic heterocycles and alternation `altnum` choices; listed in the benchmark report's confusion tables.
 6. **Order dependence:** resonance ties and `altnum` can depend on input atom order (SPEC 5.3, 5.5).
-7. **Formats:** GROMACS export refuses halogen lone pairs (ParmEd does not convert them; use `cgenff_charmm2gmx`).
+7. **Formats:** GROMACS files are checked by single-point energies against the OpenMM/CHARMM build (all 2,074 OUT
+   molecules, FINDINGS §12), not by dynamics. The `.itp` uses CGenFF type names; inside a CHARMM36 GROMACS port those
+   names and `LPH` must exist in the force field's atom types.
    mol2 input carries no formal charges; they are derived from valences.
 8. **Version drift:** B3 charges come from a 4.x-era program and are not used as an exactness test; B4 annotations
    mix program versions, part of the remaining 8 % misses.

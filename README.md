@@ -12,8 +12,8 @@ SilcsBio. Describe its output as "CGenFF-compatible parameters generated with Li
 ## Installation
 
 You need Linux, macOS or Windows with WSL (Windows Subsystem for Linux), and `git`. Run every command below in a
-terminal, in the order given. There are two ways to install: option A uses conda and is recommended (it includes
-GROMACS export); option B uses plain Python 3.10–3.13.
+terminal, in the order given. There are two ways to install: option A uses conda and is recommended; option B uses
+plain Python 3.10–3.13. Both give the same program.
 
 ### Option A: conda (recommended)
 
@@ -28,9 +28,9 @@ Stay in the `ligandff` folder for the remaining steps.
 
 **2. Create an environment and install LigandFF**
 ```bash
-conda create -n ligandff --override-channels -c conda-forge python=3.12 rdkit networkx openmm parmed pytest -y
+conda create -n ligandff --override-channels -c conda-forge python=3.12 rdkit networkx openmm pytest -y
 conda activate ligandff
-python -m pip install -e ".[export,gromacs,dev]"
+python -m pip install -e ".[export,dev]"
 ```
 `--override-channels` makes conda use only the free conda-forge channel. Without it, recent Miniconda and Anaconda
 installations also query Anaconda's default channels and stop with `CondaToSNonInteractiveError` until their Terms of
@@ -45,15 +45,16 @@ bash scripts/fetch_data.sh
 ```bash
 python -m pytest -q
 ```
-The last line should read like `119 passed, 2 skipped` and must not mention `failed` (the two skipped tests need
-local data that is not distributed).
+The last line should read like `124 passed, 3 skipped` and must not mention `failed`. Two skipped tests need local
+data that is not distributed; the third runs only where GROMACS itself (`gmx`) is installed.
 
 **5. Run a first molecule**
 ```bash
 ligandff "CC(=O)Nc1ccc(Cl)cc1" --name LIG -o lig.str --json lig.json --psf lig.psf
 ```
-This prints `LIG: param penalty 0.0, charge penalty 0.0, 0 parameters by analogy` and writes `lig.str`, `lig.json`
-and `lig.psf` in the current folder.
+This prints `LIG: param penalty 0.0, charge penalty 0.0, 0 parameters by analogy` and writes, in the current
+folder, `lig.str` (CHARMM), `lig.json` (report), `lig.psf` (CHARMM/OpenMM) and the GROMACS files `lig.itp`, `lig.top`
+and `lig.gro`.
 
 In every new terminal, run `conda activate ligandff` before using LigandFF.
 
@@ -71,12 +72,8 @@ bash scripts/fetch_data.sh
 python -m pytest -q
 ligandff "CC(=O)Nc1ccc(Cl)cc1" --name LIG -o lig.str --json lig.json --psf lig.psf
 ```
-The test summary should read like `118 passed, 3 skipped` and must not mention `failed` (here the GROMACS test is
-also skipped, because ParmEd is not installed). In
-every new terminal, run `cd ligandff` and `source .venv/bin/activate` before using LigandFF.
-
-This option has no GROMACS export: ParmEd is distributed on PyPI only as source code. If you need `--gromacs`, add
-it with `python -m pip install -e ".[gromacs]"`; this needs a C++ compiler (on Ubuntu: `sudo apt install g++`).
+The test summary and the output are the same as in option A. In every new terminal, run `cd ligandff` and
+`source .venv/bin/activate` before using LigandFF.
 
 ### Notes
 
@@ -91,14 +88,26 @@ it with `python -m pip install -e ".[gromacs]"`; this needs a C++ compiler (on U
 
 Input: a mol2, SDF or MOL file with all hydrogens and bond orders, or a SMILES string (hydrogens are added).
 ```bash
-ligandff ligand.mol2 -o ligand.str --json ligand.json     # CHARMM stream file + JSON report
+ligandff ligand.mol2 -o ligand.str                        # ligand.str + GROMACS ligand.itp, ligand.top, ligand.gro
+ligandff ligand.mol2 -o ligand.str --json ligand.json     # + JSON report
 ligandff ligand.mol2 -o ligand.str --psf ligand.psf       # + PSF (for CHARMM or OpenMM)
-ligandff ligand.mol2 -o ligand.str --gromacs ligand       # + ligand.top / ligand.gro (needs ParmEd)
+ligandff ligand.mol2 -o ligand.str --gromacs gmx/lig      # GROMACS files as gmx/lig.itp, .top, .gro instead
+ligandff ligand.mol2 -o ligand.str --no-gromacs           # no GROMACS files
 ligandff --help                                           # all options
 ```
-Use the `.str` file together with the CHARMM36/CGenFF files (`top_all36_cgenff.rtf`, `par_all36_cgenff.prm`), as
-with any CGenFF stream file. GROMACS export does not support molecules with halogen lone pairs (Cl, Br, I on
-aromatic rings); for those, convert the `.str` with the Lemkul lab's `cgenff_charmm2gmx`.
+**CHARMM / OpenMM:** use the `.str` file together with the CHARMM36/CGenFF files (`top_all36_cgenff.rtf`,
+`par_all36_cgenff.prm`), as with any CGenFF stream file.
+
+**GROMACS:** three files are written.
+- `ligand.itp`: the molecule (`[ moleculetype ]`) with every bonded and 1-4 parameter written out explicitly.
+  Halogen lone pairs (Cl, Br, I on aromatic rings) are virtual sites.
+- `ligand.top`: a standalone topology (CGenFF atom types and NBFIX pairs, then `#include "ligand.itp"`) for the
+  ligand alone, e.g. in vacuum or as the start of a solvated box.
+- `ligand.gro`: starting coordinates, from the input file or generated by RDKit for SMILES.
+
+For a protein–ligand system with a CHARMM36 force field for GROMACS, include `ligand.itp` after the force field
+instead of using `ligand.top`. The force field must define the CGenFF atom types used in the `.itp` (and `LPH`
+for molecules with halogen lone pairs). Check the `[ atomtypes ]` of `ligand.top` against it.
 
 From Python, including an OpenMM system:
 ```python
@@ -122,7 +131,7 @@ parameters taken by analogy, the source parameter they were copied from.
 On held-out molecules from the CGenFF training sets, LigandFF assigns every atom type correctly in 97–98 % of
 molecules (99.6–99.7 % of atoms), reproduces the published CGenFF 5.0 charges and penalties exactly, and chooses the
 same source parameter as the official program in 92 % of the analogies recorded in the parameter file. Every molecule
-in the benchmarks builds a valid OpenMM system. Details and limitations: `docs/VALIDATION.md` and the technical report.
+in the benchmarks builds a valid OpenMM system, and its GROMACS files reproduce the same energies. Details and limitations: `docs/VALIDATION.md` and the technical report.
 
 ## Citation
 
