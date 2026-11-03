@@ -5,9 +5,11 @@ chose and its TPS. Leave-one-out (SPEC 5.10 step 3): search an analog for the ca
 and compare source and TPS.
 
 Candidate pool: 6,952 of the 7,234 annotations come from one batch (comment starting `aa,`). None of them uses a
-parameter with an `aa,` comment as its source, annotated or fitted, although those are ~37 % of the file (FINDINGS
-§10): the batch was generated against a database without any `aa,` parameter. For a batch case the pool therefore
-excludes every `aa,` parameter; for the other cases it excludes only the case itself.
+parameter with an `aa,` comment as its source, annotated or fitted, although those are 18,852 of the 28,199 parameters
+(67 %, FINDINGS §10): the batch was generated against a database without any `aa,` parameter. For a batch case the
+pool therefore excludes every `aa,` parameter; for the other cases it excludes only the case itself. This replays the
+conditions of the recorded choice; the shipped tool searches the full file. `score` also reports agreement by origin
+(batch / non-batch) for this pool and for the full file (every other parameter a candidate), as aggregates.
 
 Split 80/20 with seed 42 (`benchmarks/b4_annotations.split.json`); fitting may look at B4-train only, B4-test is
 reported as aggregates (SPEC 7.2).
@@ -71,33 +73,34 @@ def _same_source(kind, found, source):
     return kind == "improper" and found[0] == source[0] and sorted(found[1:]) == sorted(source[1:])
 
 
-def leave_one_out(engine, case):
-    """AnalogResult of the search for `case` with the B4 candidate pool, or None."""
+def leave_one_out(engine, case, full=False):
+    """AnalogResult of the search for `case` with the B4 candidate pool (full=True: every other parameter), or None."""
     target = case.types
 
     def accept(prm):
         if prm.types == target:
             return False
-        return not (case.batch and batch_era(prm))
+        return full or not (case.batch and batch_era(prm))
     return engine.find(case.kind, target, accept=accept)
 
 
 _ENGINE = None
+_FULL = False
 
 
 def _search(chunk):
     out = []
     for case in chunk:
-        res = leave_one_out(_ENGINE, case)
+        res = leave_one_out(_ENGINE, case, _FULL)
         out.append((case, res and (res.source, res.penalty)))
     return out
 
 
-def _results(engine, cases, processes):
+def _results(engine, cases, processes, full=False):
     """[(case, (source, penalty) or None)] in input order; forked worker processes where available."""
-    global _ENGINE
+    global _ENGINE, _FULL
     import multiprocessing as mp
-    _ENGINE = engine
+    _ENGINE, _FULL = engine, full
     if processes <= 1 or "fork" not in mp.get_all_start_methods():
         return _search(cases)
     chunks = [cases[i::processes] for i in range(processes)]
@@ -117,6 +120,13 @@ def score(engine, cases, n_examples=0, processes=None):
     processes = processes or min(os.cpu_count() or 1, 16)
     per = collections.defaultdict(lambda: collections.Counter())
     examples = []
+    origin = collections.defaultdict(lambda: collections.Counter())
+    for pool, full in (("B4 pool", False), ("full file", True)):
+        for case, res in _results(engine, cases, processes, full):
+            o = origin[(pool, case.split, "batch" if case.batch else "non-batch")]
+            o["cases"] += 1
+            o["same_source"] += res is not None and _same_source(case.kind, res[0], case.source)
+            o["tps_within_0.5"] += res is not None and abs(res[1] - case.penalty) <= 0.5 + 1e-9
     for case, res in _results(engine, cases, processes):
         same = res is not None and _same_source(case.kind, res[0], case.source)
         close = res is not None and abs(res[1] - case.penalty) <= 0.5 + 1e-9
@@ -135,4 +145,5 @@ def score(engine, cases, n_examples=0, processes=None):
             continue
         out[key] = {k: s[k] for k in ("cases", "same_source", "tps_within_0.5", "both")}
         out[key].update({f"{k}_fraction": s[k] / s["cases"] for k in ("same_source", "tps_within_0.5", "both")})
-    return {"splits": out, "examples": examples}
+    by_origin = [{"pool": pool, "split": split, "origin": o, **dict(c)} for (pool, split, o), c in sorted(origin.items())]
+    return {"splits": out, "by_origin": by_origin, "examples": examples}

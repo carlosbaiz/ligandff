@@ -32,6 +32,9 @@ All regression floors of SPEC 7.4 are met.
 | QF formal charges (molecules with correct types and complete increments) | B1 887/888, B2 669/670 | B1 218/218, B2 166/166 |
 | QI improper centres (molecules with correct types) | B1 884/895, B2 705/720 | B1 219/220, B2 175/178 |
 | B4 same source / TPS within ±0.5 | 93.0 % / 92.6 % (5,787) | 92.1 % / 92.5 % (1,447) |
+| B4 batch cases, B4 pool | 95.4 % / 94.4 % (5,555) | 94.1 % / 93.8 % (1,397) |
+| B4 non-batch cases | 36.2 % / 49.1 % (232) | 36.0 % / 54.0 % (50) |
+| B4 batch cases, full file as pool (shipped configuration) | 38.9 % / 46.1 % (5,555) | 38.2 % / 46.4 % (1,397) |
 
 The train-test gap is 1–1.7 points for typing and under 1 point for the analogy: no sign of strong overfitting, but B1
 and B2 train and test come from the same population (CGenFF training residues).
@@ -74,21 +77,26 @@ Found and fixed during M7 (FINDINGS §11):
 2. **Charges of molecules that need analogs** are validated only on B0 (M064, one analog). QT checks the increment
    model on complete training residues; the charge-analogy path (nonbonded matrix, dihedral cap at 50) is not
    validated beyond B0.
-3. **Penalty values.** The fitted matrix (M5) ranks candidates well (B4 same source 92 %), but substitutions never
+3. **Analogy agreement on new molecules is not known.** B4's 92 % comes from one batch (96 % of the cases) replayed
+   against the smaller database that batch saw; the shipped tool searches the full file. The 282 annotations outside
+   the batch agree 36 %, and batch cases searched against the full file 38 % (section 2). Neither is the agreement to
+   expect with today's program: batch labels were chosen from a smaller pool, and non-batch labels come from several
+   program versions. Treat analog parameters as the penalties say: validate them.
+4. **Penalty values.** The fitted matrix (M5) reproduces the replayed batch choices (B4 same source 92 %), but substitutions never
    observed in the parameter file cost 20 × the relation median. Penalties built from them (typically > 100, up to
    thousands) are a "do not trust" signal, not values the official program would print. Penalties below ~10 come
    from observed elements and agree with the program on B4 (TPS within ±0.5 for 92 %).
-4. **Linear-centre dihedrals** are left out of our PSF and OpenMM system (section 3). CHARMM itself may still generate
+5. **Linear-centre dihedrals** are left out of our PSF and OpenMM system (section 3). CHARMM itself may still generate
    them from the residue (`AUTOGENERATE ... DIHE`), exactly as for official training residues such as ACN; how CHARMM
    treats the missing parameters there is not checked. The charge side is unchanged: dihedral increments through a
    linear centre come from analogs above the cap of 50, so they add no charge but a small charge penalty
    (acetonitrile: 4.3).
-5. **Typing residuals** (dev splits): mostly zwitterionic/mesoionic resonance structures (e.g. 2300VB, PNTM),
+6. **Typing residuals** (dev splits): mostly zwitterionic/mesoionic resonance structures (e.g. 2300VB, PNTM),
    exotic heterocycles and alternation `altnum` choices; listed in the benchmark report's confusion tables.
-6. **Order dependence:** resonance ties and `altnum` can depend on input atom order (SPEC 5.3, 5.5).
-7. **Formats:** GROMACS files are checked by single-point energies against the OpenMM/CHARMM build (all 2,074 OUT
+7. **Order dependence:** resonance ties and `altnum` can depend on input atom order (SPEC 5.3, 5.5).
+8. **Formats:** GROMACS files are checked by single-point energies against the OpenMM/CHARMM build (all 2,074 OUT
    molecules, FINDINGS §12), not by dynamics. The `.itp` uses CGenFF type names; inside a CHARMM36 GROMACS port those
    names and `LPH` must exist in the force field's atom types.
    mol2 input carries no formal charges; they are derived from valences.
-8. **Version drift:** B3 charges come from a 4.x-era program and are not used as an exactness test; B4 annotations
+9. **Version drift:** B3 charges come from a 4.x-era program and are not used as an exactness test; B4 annotations
    mix program versions, part of the remaining 8 % misses.

@@ -306,7 +306,9 @@ Status (M5, done): `params/penalties.py:fitted_model`, the default model of `def
 annotations only: the provisional model + altnum twins at 0 + elements solved from multi-substitution annotations
 (one unknown at a time, iterated) + unobserved substitutions at 20 × the relation median (the program never chose
 them, so they are expensive; B4-train grid 5/10/20/50). B4 leave-one-out with the batch-era candidate pool (7.1):
-B4-train 93.0 % same source / 92.6 % TPS within ±0.5; **B4-test 92.1 % / 92.5 %**. The hierarchical `pri/alt/up`
+B4-train 93.0 % same source / 92.6 % TPS within ±0.5; **B4-test 92.1 % / 92.5 %**. These are batch cases (96 %)
+replayed against the database the batch saw; the 282 non-batch annotations agree 36 %, and with the full file as pool
+(the shipped configuration) batch cases agree 38 % (FINDINGS §10, "By origin"). The hierarchical `pri/alt/up`
 reconstruction of steps 1 and 4 was not needed to reach the targets: the model stays a flat element table + relation
 fallback (plus the published NG3 hierarchy). Residual train failures: mostly altnum-twin ties where the program took
 the `…2` variant (e.g. bond CG2DC1–CG324 from CG2DC2–CG321) and analogs whose source is cheaper only under elements

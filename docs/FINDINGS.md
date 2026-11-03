@@ -212,7 +212,8 @@ Only B1-train/B2-train failures were inspected; test splits are aggregates.
 B4 = the 7,234 annotated parameters; split 80/20 (seed 42); only B4-train failures were inspected.
 - When were the analogies made? 6,952 annotations share a comment prefix `aa,` (one project). None of them has an
   `aa,` parameter as its source, neither another annotated one nor any of the 11,900 fitted `aa,` parameters
-  (0 of 5,555 B4-train batch cases), although those are ~37 % of the file: the batch ran against the database before
+  (0 of 5,555 B4-train batch cases), although `aa,` parameters are 18,852 of the 28,199 in the file (67 %; 6,952
+  annotated + ~11,900 fitted): the batch ran against the database before
   that project. Leave-one-out must use that pool: with "everything but the case itself" the provisional model scores
   36 % same source; excluding only annotated batch members 63 %; excluding every `aa,` parameter 76 %. Every
   annotated source still exists in the file; 97 % of sources are non-annotated parameters.
@@ -228,6 +229,16 @@ B4 = the 7,234 annotated parameters; split 80/20 (seed 42); only B4-train failur
 - Result (`fitted_model`, learned from B4-train only): train 93.0 % same source, 92.6 % TPS within ±0.5, 90.4 % both;
   test 92.1 %, 92.5 %, 89.4 %. Per kind (train): bonds 90/98 %, angles 91/93 %, dihedrals 94/92 %, impropers 97/98 %.
   M064 is still reproduced exactly. Full B4 run: 23 s on 14 cores.
+- By origin (2026-11-02; `b4.score` "by_origin", aggregates): with the B4 pool, batch cases 95.4 % (train) / 94.1 %
+  (test) same source, but the 282 non-batch annotations only 36.2 % (84/232) / 36.0 % (18/50); TPS within ±0.5
+  49 % / 54 %. With the full file as pool (what the shipped tool searches), batch cases drop to 38.9 % / 38.2 %
+  (non-batch unchanged: their pool is already the full file minus the case). The headline 92 % is therefore the
+  ranking under the replayed conditions of one batch, not the agreement users should expect: batch labels came from a
+  smaller database, so the full-pool figure understates agreement with today's program, and the non-batch cases come
+  from several program versions with unknown databases. Agreement with the current program on new molecules is not
+  measured (no official outputs, D4); 36–94 % brackets it.
+- Elements learned: single-substitution annotations give 106 bonded and 260 nonbonded elements in the full
+  file, 95 bonded and 250 nonbonded in B4-train; `fitted_model` uses only the B4-train ones (plus solved elements).
 
 ## 11. Final validation (M7)
 All section 1 targets met (`docs/VALIDATION.md`). Found on the way:

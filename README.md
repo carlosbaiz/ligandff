@@ -129,8 +129,9 @@ parameters taken by analogy, the source parameter they were copied from.
 ## Accuracy
 
 On held-out molecules from the CGenFF training sets, LigandFF assigns every atom type correctly in 97–98 % of
-molecules (99.6–99.7 % of atoms), reproduces the published CGenFF 5.0 charges and penalties exactly, and chooses the
-same source parameter as the official program in 92 % of the analogies recorded in the parameter file. Every molecule
+molecules (99.6–99.7 % of atoms), reproduces the published CGenFF 5.0 charges and penalties exactly, and, replaying the analogies recorded in the
+parameter file under the conditions they were made, chooses the same source parameter as the official program in
+92 % of cases (36 % for the few annotations made outside that batch; agreement on new molecules is not measured). Every molecule
 in the benchmarks builds a valid OpenMM system, and its GROMACS files reproduce the same energies. Details and limitations: `docs/VALIDATION.md` and the technical report.
 
 ## Citation

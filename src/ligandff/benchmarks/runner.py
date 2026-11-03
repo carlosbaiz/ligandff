@@ -180,6 +180,14 @@ def to_markdown(report, confusions=True):
             out.append(f"| {split} | {m['cases']} | {m['same_source_fraction']:.1%} | "
                        f"{m['tps_within_0.5_fraction']:.1%} | {m['both_fraction']:.1%} |")
         out.append("")
+        if report["B4"].get("by_origin"):
+            out += ["By origin (6,952 batch cases replay the database the batch saw; the shipped tool searches the "
+                    "full file):", "", "| pool | split | origin | cases | same source | TPS within ±0.5 |",
+                    "|---|---|---|---|---|---|"]
+            out += [f"| {m['pool']} | {m['split']} | {m['origin']} | {m['cases']} | "
+                    f"{m['same_source'] / m['cases']:.1%} ({m['same_source']}) | "
+                    f"{m['tps_within_0.5'] / m['cases']:.1%} ({m['tps_within_0.5']}) |" for m in report["B4"]["by_origin"]]
+            out.append("")
         if confusions and report["B4"]["examples"]:
             out += ["Failures, B4-train:", "", "| missing | program's source | found |", "|---|---|---|"]
             out += [f"| {x['case']} | {x['reference'][0]} ({x['reference'][1]}) | "
