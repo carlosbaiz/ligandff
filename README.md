@@ -137,12 +137,17 @@ On held-out molecules from the CGenFF training sets, LigandFF assigns every atom
 molecules (99.6–99.7 % of atoms), reproduces the published CGenFF 5.0 charges and penalties exactly, and, replaying the analogies recorded in the
 parameter file under the conditions they were made, chooses the same source parameter as the official program in
 92 % of cases (36 % for the few annotations made outside that batch; agreement on new molecules is not measured). Every molecule
-in the benchmarks builds a valid OpenMM system, and its GROMACS files reproduce the same energies. Details and limitations: `docs/VALIDATION.md` and the technical report.
+in the benchmarks builds a valid OpenMM system, and its GROMACS files reproduce the same energies. Details and limitations: `docs/VALIDATION.md` and the [technical report](https://doi.org/10.26434/chemrxiv.15011711/v1).
 
 ## Citation
 
-If you use LigandFF, please cite the technical report (ChemRxiv, 2026; see `CITATION.cff` or GitHub's "Cite this
-repository" button) together with the CGenFF papers:
+If you use LigandFF, please cite the technical report (also in `CITATION.cff` and GitHub's "Cite this repository"
+button):
+
+- Lee, E.; Baiz, C. R. LigandFF: an open-source implementation of rule-based atom typing, charge assignment and
+  parameter assignment by analogy. *ChemRxiv* **2026**. doi:[10.26434/chemrxiv.15011711/v1](https://doi.org/10.26434/chemrxiv.15011711/v1)
+
+together with the CGenFF papers:
 
 - Vanommeslaeghe, K. et al. *J. Comput. Chem.* **2010**, 31, 671–690. doi:10.1002/jcc.21367
 - Vanommeslaeghe, K.; MacKerell, A. D., Jr. *J. Chem. Inf. Model.* **2012**, 52, 3144–3154. doi:10.1021/ci300363c

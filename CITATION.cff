@@ -16,17 +16,22 @@ authors:
     given-names: Carlos R.
     affiliation: Department of Chemistry, University of Texas at Austin
     email: cbaiz@cm.utexas.edu
+    orcid: https://orcid.org/0000-0003-0699-8468
 repository-code: https://github.com/carlosbaiz/ligandff
 preferred-citation:
   type: report
   title: >-
-    LigandFF: an open-source, CGenFF-compatible implementation of rule-based atom typing, charge assignment and
-    parameter assignment by analogy
+    LigandFF: an open-source implementation of rule-based atom typing, charge assignment and parameter assignment by
+    analogy
   authors:
     - family-names: Lee
       given-names: Euihyun
     - family-names: Baiz
       given-names: Carlos R.
+      orcid: https://orcid.org/0000-0003-0699-8468
   institution:
     name: ChemRxiv
   year: 2026
+  date-published: 2026-11-05
+  doi: 10.26434/chemrxiv.15011711/v1
+  url: https://doi.org/10.26434/chemrxiv.15011711/v1
